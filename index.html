@@ -653,9 +653,11 @@
 
             <!-- User Info Setup -->
             <div class="setup-section" id="userSetup" style="display: none;">
-                <h3>👤 Student Information</h3>
+                <h3>👤 Who are you?</h3>
+                <p style="color:#78350f; margin-bottom:12px;">Enter your name to start learning, or go straight to the Teacher Dashboard.</p>
                 <input type="text" id="studentName" placeholder="Student Name (e.g., Emma Smith)">
-                <button onclick="saveStudentInfo()">Start Learning!</button>
+                <button onclick="saveStudentInfo()">🎒 Start Learning!</button>
+                <button onclick="goToTeacherDirectly()" style="background: #6c5ce7; margin-top: 8px;">👨‍🏫 I'm a Teacher</button>
             </div>
 
             <!-- Current User Display -->
@@ -1420,6 +1422,13 @@
             document.getElementById('userSetup').style.display = 'block';
         }
 
+        function goToTeacherDirectly() {
+            // Hide the name entry and go straight to teacher dashboard
+            document.getElementById('userSetup').style.display = 'none';
+            document.getElementById('teacherView').classList.add('active');
+            showTeacherDashboard();
+        }
+
         function selectMode(mode) {
             if (mode === 'student') {
                 document.getElementById('modeView').style.display = 'none';
@@ -1443,56 +1452,42 @@
                 return;
             }
 
-            document.getElementById('studentsList').innerHTML = '<p style="color: #636e72; text-align: center;">Loading students...</p>';
-
             try {
-                const studentsSnapshot = await getDocs(collection(db, 'students'));
-
-                if (studentsSnapshot.empty) {
-                    document.getElementById('studentsList').innerHTML = '<p style="color: #636e72; text-align: center;">No students yet</p>';
-                    return;
-                }
-
+                const studentsRef = collection(db, 'students');
+                const studentsSnapshot = await getDocs(studentsRef);
+                
                 let html = '';
                 for (const studentDoc of studentsSnapshot.docs) {
                     const student = studentDoc.data();
                     const studentId = studentDoc.id;
-
-                    // Removed orderBy to avoid needing a Firestore composite index
+                    
                     const submissionsSnapshot = await getDocs(
                         query(collection(db, 'submissions'), where('studentId', '==', studentId))
                     );
-
+                    
                     const totalTests = submissionsSnapshot.size;
                     let totalScore = 0;
                     let totalQuestions = 0;
-                    let lastActive = '';
 
                     submissionsSnapshot.forEach(doc => {
                         const sub = doc.data();
                         totalScore += sub.score || 0;
                         totalQuestions += sub.totalQuestions || 0;
-                        if (!lastActive || sub.completedAt > lastActive) lastActive = sub.completedAt;
                     });
 
                     const avgPercentage = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
-                    const lastDate = lastActive ? new Date(lastActive).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : 'No activity';
-                    const avgColor = avgPercentage >= 80 ? '#00b894' : avgPercentage >= 60 ? '#fdcb6e' : '#e17055';
 
                     html += `
                         <div class="student-card" onclick="viewStudentProgress('${studentId}', '${student.name}')">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${student.name}</div>
-                                <div style="font-size: 0.8em; color: #636e72;">Last active: ${lastDate}</div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div style="font-size: 1.3em; font-weight: bold; color: #2d3436; margin-bottom: 10px;">${student.name}</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px;">
                                 <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Attempts</div>
+                                    <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Tests</div>
                                     <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${totalTests}</div>
                                 </div>
                                 <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
                                     <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Average</div>
-                                    <div style="font-size: 1.3em; font-weight: bold; color: ${avgColor};">${avgPercentage}%</div>
+                                    <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${avgPercentage}%</div>
                                 </div>
                                 <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
                                     <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Score</div>
@@ -1503,21 +1498,20 @@
                     `;
                 }
 
-                document.getElementById('studentsList').innerHTML = html;
+                document.getElementById('studentsList').innerHTML = html || '<p style="color: #636e72; text-align: center;">No students yet</p>';
             } catch (error) {
                 console.error('Error loading students:', error);
-                document.getElementById('studentsList').innerHTML = '<p style="color: #e17055; text-align: center;">Error loading data: ' + error.message + '</p>';
             }
         }
 
         async function viewStudentProgress(studentId, studentName) {
             try {
                 const submissionsRef = collection(db, 'submissions');
-                // Fetch without orderBy to avoid composite index requirement, sort in JS
-                const q = query(submissionsRef, where('studentId', '==', studentId));
-                const rawSnap = await getDocs(q);
-                // Sort by completedAt descending in JavaScript
-                const submissionsSnapshot = { docs: rawSnap.docs.sort((a,b) => b.data().completedAt?.localeCompare(a.data().completedAt) || 0), empty: rawSnap.empty };
+                const rawSnap = await getDocs(query(submissionsRef, where('studentId', '==', studentId)));
+                // Sort by date descending in JS - no composite index needed
+                const sortedDocs = rawSnap.docs.sort((a,b) =>
+                    (b.data().completedAt || '').localeCompare(a.data().completedAt || ''));
+                const submissionsSnapshot = { docs: sortedDocs, empty: rawSnap.empty, forEach: (fn) => sortedDocs.forEach(d => fn(d)) };
 
                 let html = `
                     <button class="back-button" onclick="showTeacherDashboard()">⬅️ Back to Students</button>
@@ -2033,6 +2027,7 @@
         window.saveFirebaseConfig = saveFirebaseConfig;
         window.saveStudentInfo = saveStudentInfo;
         window.changeStudent = changeStudent;
+        window.goToTeacherDirectly = goToTeacherDirectly;
         window.selectMode = selectMode;
         window.selectCategory = selectCategory;
         window.selectDifficulty = selectDifficulty;
