@@ -1243,19 +1243,28 @@
         // Initialize
         async function init() {
             renderCategories();
-            const savedConfig = localStorage.getItem('mathapp-firebase-config');
-            if (savedConfig) {
-                try {
-                    const config = JSON.parse(savedConfig);
-                    await initFirebase(config);
-                    document.getElementById('setupSection').style.display = 'none';
-                    checkStudentInfo();
-                } catch (error) {
-                    console.error('Error initializing Firebase:', error);
-                    updateSyncStatus('Config error');
-                }
-            } else {
-                updateSyncStatus('Setup required');
+
+            // ── Hardcoded Firebase config (Mathmagic project) ──────────────
+            const firebaseConfig = {
+                apiKey: "AIzaSyB7t8YHrcjpVqiILu_rKMteBplVM45w6s0",
+                authDomain: "mathmagic-926b8.firebaseapp.com",
+                projectId: "mathmagic-926b8",
+                storageBucket: "mathmagic-926b8.firebasestorage.app",
+                messagingSenderId: "883783688871",
+                appId: "1:883783688871:web:2d7306bdf276ce458e3182",
+                measurementId: "G-R04V4SH4JM"
+            };
+
+            // Always hide the manual setup section — config is built in
+            document.getElementById('setupSection').style.display = 'none';
+
+            try {
+                await initFirebase(firebaseConfig);
+                checkStudentInfo();
+            } catch (error) {
+                console.error('Firebase init error:', error);
+                updateSyncStatus('Connection error - using local mode');
+                checkStudentInfo(); // still let users in even if Firebase fails
             }
         }
 
