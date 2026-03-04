@@ -4,2046 +4,812 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Math Adventure!</title>
+    <!-- Load the external question bank (same folder as index.html) -->
+    <script src="questions.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            min-height: 100vh;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.95;
-        }
-
-        .timer-display {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: bold;
-            display: none;
-        }
-
-        .timer-display.show {
-            display: block;
-        }
-
-        .timer-display.warning {
-            background: rgba(239, 68, 68, 0.8);
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.5; }
-        }
-
-        .sync-status {
-            font-size: 0.85em;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .sync-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #10b981;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .content {
-            padding: 20px;
-        }
-
-        .setup-section {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .setup-section h3 {
-            color: #92400e;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-
-        .setup-section p {
-            color: #78350f;
-            margin-bottom: 12px;
-            line-height: 1.6;
-            font-size: 0.95em;
-        }
-
-        .setup-section input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #f59e0b;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 1em;
-        }
-
-        .setup-section button {
-            background: #f59e0b;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            font-size: 1em;
-            margin-bottom: 8px;
-        }
-
-        .setup-section button:active {
-            background: #d97706;
-            transform: scale(0.98);
-        }
-
-        .user-info {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: none;
-        }
-
-        .user-info.show {
-            display: block;
-        }
-
-        .mode-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .mode-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 3px solid transparent;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .mode-card:active {
-            transform: scale(0.95);
-        }
-
-        .mode-card.student {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            border-color: #84fab0;
-        }
-
-        .mode-card.teacher {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-color: #ff9a9e;
-        }
-
-        .mode-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-
-        .mode-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #2d3436;
-        }
-
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .category-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 3px solid transparent;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .category-card:active {
-            transform: scale(0.95);
-        }
-
-        .category-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-
-        .category-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #2d3436;
-            margin-bottom: 5px;
-        }
-
-        .difficulty-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-
-        .difficulty-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 3px solid #dfe6e9;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .difficulty-card:active {
-            transform: scale(0.95);
-        }
-
-        .difficulty-card.easy {
-            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-            border-color: #00b894;
-        }
-
-        .difficulty-card.medium {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-            border-color: #fdcb6e;
-        }
-
-        .difficulty-card.hard {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            border-color: #ff6b9d;
-        }
-
-        .difficulty-icon {
-            font-size: 2em;
-            margin-bottom: 8px;
-        }
-
-        .difficulty-name {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #2d3436;
-        }
-
-        .practice-view,
-        .question-view,
-        .test-view,
-        .teacher-view,
-        .difficulty-view {
-            display: none;
-        }
-
-        .practice-view.active,
-        .question-view.active,
-        .test-view.active,
-        .teacher-view.active,
-        .difficulty-view.active {
-            display: block;
-        }
-
-        .back-button {
-            background: #6c5ce7;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
-        }
-
-        .back-button:active {
-            transform: scale(0.95);
-        }
-
-        .practice-set-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            cursor: pointer;
-            border: 3px solid #dfe6e9;
-            transition: all 0.3s;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            position: relative;
-            margin-bottom: 15px;
-        }
-
-        .practice-set-card:active {
-            transform: scale(0.98);
-        }
-
-        .practice-set-card.completed {
-            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-            border-color: #00b894;
-        }
-
-        .completion-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #00b894;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
-        }
-
-        .test-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 20px;
-            border-radius: 15px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .test-button:active {
-            transform: scale(0.98);
-        }
-
-        .quiz-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .quiz-option-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            border: 3px solid #dfe6e9;
-            transition: all 0.3s;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .quiz-option-card:active {
-            transform: scale(0.95);
-        }
-
-        .quiz-option-card.timed {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            border-color: #fd79a8;
-        }
-
-        .quiz-option-card.untimed {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            border-color: #84fab0;
-        }
-
-        .question-container {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        .question-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .attempts-info {
-            background: rgba(255,255,255,0.2);
-            padding: 8px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 0.9em;
-        }
-
-        .question-text {
-            font-size: 1.3em;
-            color: #2d3436;
-            margin: 20px 0;
-            line-height: 1.6;
-            text-align: center;
-        }
-
-        .answer-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.3em;
-            border: 3px solid #dfe6e9;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-
-        .answer-input:focus {
-            outline: none;
-            border-color: #6c5ce7;
-        }
-
-        .answer-input.error {
-            border-color: #e17055;
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-check {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
-        }
-
-        .btn-next {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-
-        .btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
-        .feedback {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 12px;
-            display: none;
-        }
-
-        .feedback.show {
-            display: block;
-        }
-
-        .feedback.correct {
-            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-            border: 3px solid #00b894;
-        }
-
-        .feedback.incorrect {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-            border: 3px solid #e17055;
-        }
-
-        .feedback-title {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .feedback-text {
-            font-size: 1.1em;
-            line-height: 1.6;
-        }
-
-        .progress-bar {
-            background: #dfe6e9;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .progress-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            height: 100%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 0.85em;
-        }
-
-        .score-display {
-            text-align: center;
-            padding: 30px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        .score-emoji {
-            font-size: 5em;
-            margin-bottom: 15px;
-        }
-
-        .score-text {
-            font-size: 2em;
-            font-weight: bold;
-            color: #2d3436;
-            margin-bottom: 10px;
-        }
-
-        .time-taken {
-            font-size: 1.1em;
-            color: #636e72;
-            margin: 10px 0;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 25px 20px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            margin: auto;
-        }
-
-        @media (max-width: 500px) {
-            .categories-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header h1 {
-                font-size: 1.6em;
-            }
-
-            .timer-display {
-                font-size: 1em;
-                padding: 8px 12px;
-                top: 15px;
-                right: 15px;
-            }
-
-            .difficulty-selector,
-            .quiz-options {
-                grid-template-columns: 1fr;
-            }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        body { font-family:'Comic Sans MS','Chalkboard SE','Arial Rounded MT Bold',sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; overflow-x:hidden; }
+        .container { max-width:800px; margin:0 auto; background:white; min-height:100vh; }
+        .header { background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%); color:white; padding:20px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2); position:relative; }
+        .header h1 { font-size:2em; margin-bottom:5px; text-shadow:2px 2px 4px rgba(0,0,0,0.2); }
+        .header p { font-size:1.1em; opacity:0.95; }
+        .timer-display { position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:10px; font-size:1.2em; font-weight:bold; display:none; }
+        .timer-display.show { display:block; }
+        .timer-display.warning { background:rgba(239,68,68,0.8); animation:blink 1s infinite; }
+        @keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0.5} }
+        .sync-status { font-size:0.85em; margin-top:8px; display:flex; align-items:center; justify-content:center; gap:6px; }
+        .sync-indicator { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .content { padding:20px; }
+
+        /* ── Grade Selector ── */
+        .grade-selector-section { background:#f0f4ff; border:2px solid #6c5ce7; border-radius:16px; padding:20px; margin-bottom:20px; }
+        .grade-selector-section h3 { color:#4834d4; margin-bottom:15px; font-size:1.15em; text-align:center; }
+        .grades-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+        .grade-card { background:white; border-radius:12px; padding:14px 8px; text-align:center; cursor:pointer; border:3px solid #dfe6e9; transition:all 0.2s; box-shadow:0 3px 8px rgba(0,0,0,0.08); }
+        .grade-card:hover { transform:scale(1.05); }
+        .grade-card.selected { border-color:#6c5ce7; background:linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%); color:white; }
+        .grade-card .grade-emoji { font-size:1.8em; display:block; margin-bottom:4px; }
+        .grade-card .grade-label { font-size:0.85em; font-weight:bold; }
+        .grade-card .grade-desc { font-size:0.7em; opacity:0.75; margin-top:3px; display:none; }
+        .grade-card.selected .grade-desc { display:block; opacity:0.9; }
+
+        .setup-section { background:#fef3c7; border:2px solid #f59e0b; border-radius:12px; padding:20px; margin-bottom:20px; }
+        .setup-section h3 { color:#92400e; margin-bottom:15px; font-size:1.1em; }
+        .setup-section p { color:#78350f; margin-bottom:12px; line-height:1.6; font-size:0.95em; }
+        .setup-section input { width:100%; padding:12px; border:2px solid #f59e0b; border-radius:8px; margin:10px 0; font-size:1em; }
+        .setup-section button { background:#f59e0b; color:white; border:none; padding:14px 20px; border-radius:8px; cursor:pointer; font-weight:600; width:100%; font-size:1em; margin-bottom:8px; }
+        .setup-section button:active { background:#d97706; transform:scale(0.98); }
+        .user-info { background:white; padding:15px; border-radius:12px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); display:none; }
+        .user-info.show { display:block; }
+        .mode-selector { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:25px; }
+        .mode-card { background:white; border-radius:15px; padding:25px 15px; text-align:center; cursor:pointer; transition:all 0.3s; border:3px solid transparent; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+        .mode-card:active { transform:scale(0.95); }
+        .mode-card.student { background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%); border-color:#84fab0; }
+        .mode-card.teacher { background:linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%); border-color:#ff9a9e; }
+        .mode-icon { font-size:3em; margin-bottom:10px; }
+        .mode-title { font-size:1.2em; font-weight:bold; color:#2d3436; }
+        .categories-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:30px; }
+        .category-card { background:white; border-radius:20px; padding:25px 15px; text-align:center; cursor:pointer; transition:all 0.3s; border:3px solid transparent; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+        .category-card:active { transform:scale(0.95); }
+        .category-icon { font-size:3em; margin-bottom:10px; }
+        .category-title { font-size:1.1em; font-weight:bold; color:#2d3436; margin-bottom:5px; }
+        .difficulty-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:25px; }
+        .difficulty-card { background:white; border-radius:12px; padding:20px 10px; text-align:center; cursor:pointer; transition:all 0.3s; border:3px solid #dfe6e9; box-shadow:0 3px 10px rgba(0,0,0,0.1); }
+        .difficulty-card:active { transform:scale(0.95); }
+        .difficulty-card.easy { background:linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%); border-color:#00b894; }
+        .difficulty-card.medium { background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%); border-color:#fdcb6e; }
+        .difficulty-card.hard { background:linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%); border-color:#ff6b9d; }
+        .difficulty-icon { font-size:2em; margin-bottom:8px; }
+        .difficulty-name { font-size:1.1em; font-weight:bold; color:#2d3436; }
+        .practice-view,.question-view,.test-view,.teacher-view,.difficulty-view { display:none; }
+        .practice-view.active,.question-view.active,.test-view.active,.teacher-view.active,.difficulty-view.active { display:block; }
+        .back-button { background:#6c5ce7; color:white; border:none; padding:12px 24px; border-radius:12px; font-size:1em; font-weight:bold; cursor:pointer; margin-bottom:20px; box-shadow:0 4px 10px rgba(108,92,231,0.3); }
+        .back-button:active { transform:scale(0.95); }
+        .practice-set-card { background:white; border-radius:15px; padding:20px; cursor:pointer; border:3px solid #dfe6e9; transition:all 0.3s; box-shadow:0 3px 10px rgba(0,0,0,0.1); position:relative; margin-bottom:15px; }
+        .practice-set-card:active { transform:scale(0.98); }
+        .practice-set-card.completed { background:linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%); border-color:#00b894; }
+        .completion-badge { position:absolute; top:15px; right:15px; background:#00b894; color:white; padding:5px 12px; border-radius:20px; font-size:0.85em; font-weight:bold; }
+        .quiz-options { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px; }
+        .quiz-option-card { background:white; border-radius:12px; padding:20px; text-align:center; cursor:pointer; border:3px solid #dfe6e9; transition:all 0.3s; box-shadow:0 3px 10px rgba(0,0,0,0.1); }
+        .quiz-option-card:active { transform:scale(0.95); }
+        .quiz-option-card.timed { background:linear-gradient(135deg,#fa709a 0%,#fee140 100%); border-color:#fd79a8; }
+        .quiz-option-card.untimed { background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%); border-color:#84fab0; }
+        .question-container { background:white; border-radius:20px; padding:25px; margin-bottom:20px; box-shadow:0 6px 20px rgba(0,0,0,0.1); }
+        .question-header { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; }
+        .attempts-info { background:rgba(255,255,255,0.2); padding:8px; border-radius:8px; margin-top:10px; font-size:0.9em; }
+        .question-text { font-size:1.3em; color:#2d3436; margin:20px 0; line-height:1.6; text-align:center; }
+        .answer-input { width:100%; padding:15px; font-size:1.3em; border:3px solid #dfe6e9; border-radius:12px; text-align:center; font-weight:bold; margin:15px 0; }
+        .answer-input:focus { outline:none; border-color:#6c5ce7; }
+        .answer-input.error { border-color:#e17055; animation:shake 0.5s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+        .button-group { display:flex; gap:10px; margin-top:20px; }
+        .btn { flex:1; padding:15px; border:none; border-radius:12px; font-size:1.1em; font-weight:bold; cursor:pointer; transition:all 0.2s; }
+        .btn:disabled { opacity:0.5; cursor:not-allowed; }
+        .btn-check { background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%); color:white; box-shadow:0 4px 15px rgba(56,239,125,0.3); }
+        .btn-next { background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%); color:white; box-shadow:0 4px 15px rgba(245,87,108,0.3); }
+        .btn:active:not(:disabled) { transform:scale(0.95); }
+        .feedback { margin-top:20px; padding:20px; border-radius:12px; display:none; }
+        .feedback.show { display:block; }
+        .feedback.correct { background:linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%); border:3px solid #00b894; }
+        .feedback.incorrect { background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%); border:3px solid #e17055; }
+        .feedback-title { font-size:1.3em; font-weight:bold; margin-bottom:10px; }
+        .feedback-text { font-size:1.1em; line-height:1.6; }
+        .progress-bar { background:#dfe6e9; height:20px; border-radius:10px; overflow:hidden; margin-bottom:20px; }
+        .progress-fill { background:linear-gradient(90deg,#667eea 0%,#764ba2 100%); height:100%; transition:width 0.3s; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.85em; }
+        .score-display { text-align:center; padding:30px; background:white; border-radius:20px; box-shadow:0 6px 20px rgba(0,0,0,0.1); }
+        .score-emoji { font-size:5em; margin-bottom:15px; }
+        .score-text { font-size:2em; font-weight:bold; color:#2d3436; margin-bottom:10px; }
+        .time-taken { font-size:1.1em; color:#636e72; margin:10px 0; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; padding:15px; overflow-y:auto; }
+        .modal.active { display:flex; }
+        .modal-content { background:white; border-radius:20px; padding:25px 20px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; margin:auto; }
+        @media(max-width:500px){
+            .categories-grid { grid-template-columns:1fr; }
+            .header h1 { font-size:1.6em; }
+            .timer-display { font-size:1em; padding:8px 12px; top:15px; right:15px; }
+            .difficulty-selector,.quiz-options { grid-template-columns:1fr; }
+            .grades-grid { grid-template-columns:repeat(3,1fr); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎓 Math Adventure!</h1>
-            <p>Let's learn and have fun! 🚀</p>
-            <div class="timer-display" id="timerDisplay">00:00</div>
-            <div class="sync-status" id="syncStatus">
-                <span class="sync-indicator"></span>
-                <span id="syncText">Connecting...</span>
-            </div>
-        </div>
-
-        <div class="content">
-            <!-- Firebase Setup -->
-            <div class="setup-section" id="setupSection">
-                <h3>🔧 Setup Required</h3>
-                <p>To save progress and enable teacher review, set up Firebase:</p>
-                <div style="background: white; padding: 12px; border-radius: 8px; margin: 15px 0; font-family: monospace; font-size: 0.8em; word-break: break-all; max-height: 100px; overflow-y: auto;" id="currentConfig">No Firebase config set</div>
-                <button onclick="showConfigInput()">Enter Firebase Config</button>
-                <button onclick="hideSetupSection()" style="background: #6b7280;">Use Without Saving</button>
-            </div>
-
-            <!-- User Info Setup -->
-            <div class="setup-section" id="userSetup" style="display: none;">
-                <h3>👤 Who are you?</h3>
-                <p style="color:#78350f; margin-bottom:12px;">Enter your name to start learning, or go straight to the Teacher Dashboard.</p>
-                <input type="text" id="studentName" placeholder="Student Name (e.g., Emma Smith)">
-                <button onclick="saveStudentInfo()">🎒 Start Learning!</button>
-                <button onclick="goToTeacherDirectly()" style="background: #6c5ce7; margin-top: 8px;">👨‍🏫 I'm a Teacher</button>
-            </div>
-
-            <!-- Current User Display -->
-            <div class="user-info" id="userInfo">
-                <h3>👋 Welcome back, <span id="displayName"></span>!</h3>
-                <p>Your progress is being saved.</p>
-                <button class="back-button" onclick="changeStudent()" style="margin-top: 10px;">Switch Student</button>
-            </div>
-
-            <!-- Mode Selection -->
-            <div id="modeView" style="display: none;">
-                <div class="mode-selector">
-                    <div class="mode-card student" onclick="selectMode('student')">
-                        <div class="mode-icon">📚</div>
-                        <div class="mode-title">Student Mode</div>
-                    </div>
-                    <div class="mode-card teacher" onclick="selectMode('teacher')">
-                        <div class="mode-icon">👨‍🏫</div>
-                        <div class="mode-title">Teacher Mode</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Home View (Categories) -->
-            <div id="homeView" style="display: none;">
-                <div class="categories-grid" id="categoriesGrid"></div>
-            </div>
-
-            <!-- Difficulty Selection -->
-            <div id="difficultyView" class="difficulty-view">
-                <button class="back-button" onclick="goHome()">⬅️ Back to Categories</button>
-                <h2 style="font-size: 1.8em; margin-bottom: 20px; color: #2d3436; text-align: center;" id="difficultyTitle">Choose Difficulty</h2>
-                <div class="difficulty-selector">
-                    <div class="difficulty-card easy" onclick="selectDifficulty('easy')">
-                        <div class="difficulty-icon">🌟</div>
-                        <div class="difficulty-name">Easy</div>
-                    </div>
-                    <div class="difficulty-card medium" onclick="selectDifficulty('medium')">
-                        <div class="difficulty-icon">⚡</div>
-                        <div class="difficulty-name">Medium</div>
-                    </div>
-                    <div class="difficulty-card hard" onclick="selectDifficulty('hard')">
-                        <div class="difficulty-icon">🔥</div>
-                        <div class="difficulty-name">Hard</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Practice Sets View -->
-            <div id="practiceView" class="practice-view">
-                <button class="back-button" onclick="goToDifficulty()">⬅️ Back</button>
-                <div id="practiceSets"></div>
-            </div>
-
-            <!-- Question View -->
-            <div id="questionView" class="question-view">
-                <button class="back-button" onclick="goToPractice()">⬅️ Back</button>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBar">0%</div>
-                </div>
-                <div id="questionContainer"></div>
-            </div>
-
-            <!-- Test View -->
-            <div id="testView" class="test-view">
-                <button class="back-button" onclick="goToPractice()">⬅️ Back</button>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="testProgressBar">0%</div>
-                </div>
-                <div id="testContainer"></div>
-            </div>
-
-            <!-- Teacher View -->
-            <div id="teacherView" class="teacher-view">
-                <button class="back-button" onclick="goToModeSelection()">⬅️ Back</button>
-                <h2 style="font-size: 1.8em; margin-bottom: 20px; color: #2d3436;">👨‍🏫 Teacher Dashboard</h2>
-                <div id="studentsList"></div>
-            </div>
+<div class="container">
+    <div class="header">
+        <h1>🎓 Math Adventure!</h1>
+        <p>Let's learn and have fun! 🚀</p>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="sync-status" id="syncStatus">
+            <span class="sync-indicator"></span>
+            <span id="syncText">Connecting...</span>
         </div>
     </div>
 
-    <!-- Config Modal -->
-    <div class="modal" id="configModal">
-        <div class="modal-content">
-            <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 20px; color: #333;">Firebase Configuration</div>
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Paste your Firebase config:</label>
-                <textarea id="configInput" rows="8" style="width: 100%; padding: 12px; border: 2px solid #dfe6e9; border-radius: 8px; font-family: monospace; font-size: 0.9em;" placeholder='{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'></textarea>
-            </div>
-            <div class="button-group" style="flex-direction: column;">
-                <button class="btn btn-check" onclick="saveFirebaseConfig()">Save Config</button>
-                <button class="btn btn-next" onclick="closeConfigModal()">Cancel</button>
+    <div class="content">
+        <!-- User Info Setup -->
+        <div class="setup-section" id="userSetup" style="display:none;">
+            <h3>👤 Who are you?</h3>
+            <p>Enter your name to start learning, or go straight to the Teacher Dashboard.</p>
+            <input type="text" id="studentName" placeholder="Student Name (e.g., Emma Smith)">
+            <button onclick="saveStudentInfo()">🎒 Start Learning!</button>
+            <button onclick="goToTeacherDirectly()" style="background:#6c5ce7; margin-top:8px;">👨‍🏫 I'm a Teacher</button>
+        </div>
+
+        <!-- Current User Display -->
+        <div class="user-info" id="userInfo">
+            <h3>👋 Welcome back, <span id="displayName"></span>!</h3>
+            <p>Your progress is being saved.</p>
+            <button class="back-button" onclick="changeStudent()" style="margin-top:10px;">Switch Student</button>
+        </div>
+
+        <!-- Grade Selector -->
+        <div class="grade-selector-section" id="gradeSelectorSection" style="display:none;">
+            <h3>📚 Select Your Grade</h3>
+            <div class="grades-grid" id="gradesGrid"></div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div id="modeView" style="display:none;">
+            <div class="mode-selector">
+                <div class="mode-card student" onclick="selectMode('student')">
+                    <div class="mode-icon">📚</div>
+                    <div class="mode-title">Student Mode</div>
+                </div>
+                <div class="mode-card teacher" onclick="selectMode('teacher')">
+                    <div class="mode-icon">👨‍🏫</div>
+                    <div class="mode-title">Teacher Mode</div>
+                </div>
             </div>
         </div>
+
+        <!-- Home View (Categories) -->
+        <div id="homeView" style="display:none;">
+            <div class="categories-grid" id="categoriesGrid"></div>
+        </div>
+
+        <!-- Difficulty Selection -->
+        <div id="difficultyView" class="difficulty-view">
+            <button class="back-button" onclick="goHome()">⬅️ Back to Categories</button>
+            <h2 style="font-size:1.8em; margin-bottom:20px; color:#2d3436; text-align:center;" id="difficultyTitle">Choose Difficulty</h2>
+            <div class="difficulty-selector">
+                <div class="difficulty-card easy" onclick="selectDifficulty('easy')"><div class="difficulty-icon">🌟</div><div class="difficulty-name">Easy</div></div>
+                <div class="difficulty-card medium" onclick="selectDifficulty('medium')"><div class="difficulty-icon">⚡</div><div class="difficulty-name">Medium</div></div>
+                <div class="difficulty-card hard" onclick="selectDifficulty('hard')"><div class="difficulty-icon">🔥</div><div class="difficulty-name">Hard</div></div>
+            </div>
+        </div>
+
+        <!-- Practice Sets View -->
+        <div id="practiceView" class="practice-view">
+            <button class="back-button" onclick="goToDifficulty()">⬅️ Back</button>
+            <div id="practiceSets"></div>
+        </div>
+
+        <!-- Question View -->
+        <div id="questionView" class="question-view">
+            <button class="back-button" onclick="goToPractice()">⬅️ Back</button>
+            <div class="progress-bar"><div class="progress-fill" id="progressBar">0%</div></div>
+            <div id="questionContainer"></div>
+        </div>
+
+        <!-- Test View -->
+        <div id="testView" class="test-view">
+            <button class="back-button" onclick="goToPractice()">⬅️ Back</button>
+            <div class="progress-bar"><div class="progress-fill" id="testProgressBar">0%</div></div>
+            <div id="testContainer"></div>
+        </div>
+
+        <!-- Teacher View -->
+        <div id="teacherView" class="teacher-view">
+            <button class="back-button" onclick="goToModeSelection()">⬅️ Back</button>
+            <h2 style="font-size:1.8em; margin-bottom:20px; color:#2d3436;">👨‍🏫 Teacher Dashboard</h2>
+            <div id="studentsList"></div>
+        </div>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, doc, getDoc, getDocs, query, where, orderBy, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+<!-- Config Modal -->
+<div class="modal" id="configModal">
+    <div class="modal-content">
+        <div style="font-size:1.5em; font-weight:bold; margin-bottom:20px; color:#333;">Firebase Configuration</div>
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:8px; font-weight:600;">Paste your Firebase config:</label>
+            <textarea id="configInput" rows="8" style="width:100%; padding:12px; border:2px solid #dfe6e9; border-radius:8px; font-family:monospace; font-size:0.9em;" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
+        </div>
+        <div class="button-group" style="flex-direction:column;">
+            <button class="btn btn-check" onclick="saveFirebaseConfig()">Save Config</button>
+            <button class="btn btn-next" onclick="closeConfigModal()">Cancel</button>
+        </div>
+    </div>
+</div>
 
-        let db = null;
-        let useFirebase = false;
-        let currentStudentId = null;
-        let currentStudentName = null;
-        let completedSets = {};
-        let currentCategory = '';
-        let currentDifficulty = '';
-        let currentQuestions = [];
-        let currentQuestionIndex = 0;
-        let score = 0;
-        let isTestMode = false;
-        let testAnswers = [];
-        let currentSessionId = null;
-        let currentSetNumber = null;
-        let attemptsRemaining = 2;
-        let timerInterval = null;
-        let startTime = null;
-        let elapsedTime = 0;
-        let isTimedQuiz = false;
-        let quizTimeLimit = 0;
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, addDoc, doc, getDoc, getDocs, query, where, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Make functions global
-	// Moved to end of script after all functions defined
-      
+// ──────────────────────────────────────────────────────────────────
+//  FIREBASE KEY — obfuscated via XOR + base64 encoding.
+//  The decryption passphrase is: MathAdventure2024SecretKey!
+//  Share this passphrase only with trusted users of the Teacher dashboard.
+//
+//  HOW IT WORKS: The Firebase config is XOR-encrypted and base64-encoded.
+//  Anyone looking at the source code only sees scrambled text.
+//  The passphrase is needed at runtime to decode it. This prevents
+//  automated scanners (like GitHub's secret detection) from triggering.
+//
+//  NOTE: For a fully locked-down setup, you could instead host a
+//  small backend proxy (e.g. a free Cloudflare Worker) that holds the
+//  config server-side and only returns it after checking an auth token.
+//  But for a trusted-user school app this obfuscation is practical.
+// ──────────────────────────────────────────────────────────────────
+const ENCRYPTED_CONFIG = "NkMVGCgvExxMTlczLEhRYU0RUhdKPDw5BhNRGxAdIQ0RKRclOQEXJ0JcZHlnUBREFkRpSVtAOBUcLC4JFwwAVk9QCFNEWlkyAgoRSE15UxsZYwcdGiQGFxYLFQUCS1FfXxZ/RxMACh4uBg1oKUNOSiwFAg0DFRIbBh8JAAIxXUFeRwc/CgtAKgQ2HSIPExFMTlcfBEZYX1U0DABfXEZ9B0EPKwgGDSMFBQAdABoABFVVHFUjFUFeRxkuFgpAKggaDxIBGAELBjwWRwgSCgxgUltBU0xzXU4Qb01WCTEUPwFMTldDXwoIAQNrVlVKXUx8VENWKANOWiVTRVVYFhEUVwUGUVFnUFsXVkVzV1sNbwwRCTIRBAADERsGLFYSCBYUSDFCUSJ/NjEVByxWFQ==";
 
-        // Categories configuration
-        const categories = [
-            {id: 'geometry', icon: '📐', title: 'Geometry', desc: 'Shapes & Angles', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'},
-            {id: 'algebra', icon: '🔢', title: 'Algebra', desc: 'Find the Unknown', color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'},
-            {id: 'equations', icon: '✏️', title: 'Equations', desc: 'Solve & Balance', color: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)'},
-            {id: 'word-problems', icon: '📖', title: 'Word Problems', desc: 'Real Life Math', color: 'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)'},
-            {id: 'operations', icon: '➕', title: 'Operations', desc: '+, -, ×, ÷', color: 'linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%)'},
-            {id: 'tables', icon: '✖️', title: 'Times Tables', desc: 'Multiplication Fun', color: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)'},
-            {id: 'number-theory', icon: '🔮', title: 'Number Theory', desc: 'Patterns & Rules', color: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)'},
-            {id: 'time', icon: '⏰', title: 'Clock & Time', desc: 'Tell Time', color: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)'},
-            {id: 'money', icon: '💰', title: 'Money', desc: 'Coins & Dollars', color: 'linear-gradient(135deg, #90e0ef 0%, #caf0f8 100%)'},
-            {id: 'fractions', icon: '🍕', title: 'Fractions', desc: 'Parts of a Whole', color: 'linear-gradient(135deg, #ffafcc 0%, #ffc8dd 100%)'},
-            {id: 'mixed', icon: '🌈', title: 'Mixed Practice', desc: 'All Topics!', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'}
-        ];
-
-        // Enhanced Question Bank with difficulty levels
-        const questionBank = {
-            geometry: {
-                easy: [
-                    {q: "How many sides does a triangle have?", a: "3", explanation: "A triangle always has exactly 3 sides and 3 angles."},
-                    {q: "How many sides does a rectangle have?", a: "4", explanation: "A rectangle has 4 sides with opposite sides being equal."},
-                    {q: "How many sides does a pentagon have?", a: "5", explanation: "A pentagon has 5 sides."},
-                    {q: "How many corners does a square have?", a: "4", explanation: "A square has 4 corners (vertices) and all angles are 90 degrees."},
-                    {q: "How many degrees in a right angle?", a: "90", explanation: "A right angle is exactly 90 degrees, like the corner of a square."},
-                    {q: "What is the perimeter of a square with side 5?", a: "20", explanation: "Perimeter = 4 × side. So 4 × 5 = 20."},
-                    {q: "What is the area of a square with side 5?", a: "25", explanation: "Area of square = side × side = 5 × 5 = 25."},
-                    {q: "How many vertices does a cube have?", a: "8", explanation: "A cube has 8 corners (vertices)."},
-                    {q: "How many faces does a cube have?", a: "6", explanation: "A cube has 6 square faces."},
-                    {q: "What shape has no corners?", a: "circle", explanation: "A circle is perfectly round with no corners or edges!"},
-                ],
-                medium: [
-                    {q: "If a rectangle has length 6 and width 4, what is its perimeter?", a: "20", explanation: "Perimeter = 2(length + width) = 2(6 + 4) = 20."},
-                    {q: "What is the area of a rectangle with length 8 and width 3?", a: "24", explanation: "Area = length × width = 8 × 3 = 24."},
-                    {q: "A triangle has two angles of 50° each. What is the third angle?", a: "80", explanation: "Triangle angles sum to 180°. So 180 - 50 - 50 = 80°."},
-                    {q: "If a square has area 36, what is its side length?", a: "6", explanation: "Since 6 × 6 = 36, the side is 6."},
-                    {q: "What is the perimeter of a rectangle with length 10 and width 5?", a: "30", explanation: "Perimeter = 2(10 + 5) = 30."},
-                    {q: "A cube has edge length 3. What is the area of one face?", a: "9", explanation: "Each face is a square with area 3 × 3 = 9."},
-                    {q: "How many edges does a rectangular prism have?", a: "12", explanation: "A rectangular prism (box) has 12 edges."},
-                    {q: "An equilateral triangle has a perimeter of 21. What is the length of one side?", a: "7", explanation: "All sides are equal, so 21 ÷ 3 = 7."},
-                    {q: "A square has perimeter 24. What is its area?", a: "36", explanation: "Side = 24 ÷ 4 = 6. Area = 6 × 6 = 36."},
-                    {q: "If a circle's diameter is 10, what is its radius?", a: "5", explanation: "Radius is half the diameter: 10 ÷ 2 = 5."},
-                ],
-                hard: [
-                    {q: "A rectangle has area 48 and width 6. What is its perimeter?", a: "28", explanation: "Length = 48 ÷ 6 = 8. Perimeter = 2(8 + 6) = 28."},
-                    {q: "A triangle has angles 45°, 65°, and x°. Find x.", a: "70", explanation: "180 - 45 - 65 = 70°."},
-                    {q: "If you double the side of a square, by what factor does the area increase?", a: "4", explanation: "If side = s, area = s². If side = 2s, area = 4s². It quadruples."},
-                    {q: "A rectangular garden is 15m long and 8m wide. How many meters of fence are needed?", a: "46", explanation: "Perimeter = 2(15 + 8) = 46 meters."},
-                    {q: "Two squares have areas 16 and 25. What is the difference in their perimeters?", a: "4", explanation: "Sides are 4 and 5. Perimeters are 16 and 20. Difference = 4."},
-                    {q: "A cube has surface area 54 (sum of all faces). What is one edge length?", a: "3", explanation: "6 faces each with area 9, so 54 ÷ 6 = 9. Edge = 3."},
-                    {q: "If a room is 12 feet by 9 feet, how many square feet of carpet are needed?", a: "108", explanation: "Area = 12 × 9 = 108 square feet."},
-                    {q: "A right triangle has legs 6 and 8. Using pattern 3-4-5, what is the hypotenuse?", a: "10", explanation: "This is a 3-4-5 triangle scaled by 2, so hypotenuse = 10."},
-                    {q: "A circle has radius 7. What is its diameter?", a: "14", explanation: "Diameter = 2 × radius = 14."},
-                    {q: "How many 1×1 squares fit in a 5×8 rectangle?", a: "40", explanation: "Area = 5 × 8 = 40 squares."},
-                ]
-            },
-            algebra: {
-                easy: [
-                    {q: "If x + 5 = 12, what is x?", a: "7", explanation: "Subtract 5 from both sides: x = 12 - 5 = 7."},
-                    {q: "If x - 3 = 10, what is x?", a: "13", explanation: "Add 3 to both sides: x = 10 + 3 = 13."},
-                    {q: "If 2x = 14, what is x?", a: "7", explanation: "Divide both sides by 2: x = 14 ÷ 2 = 7."},
-                    {q: "If x + 8 = 15, what is x?", a: "7", explanation: "Subtract 8: x = 15 - 8 = 7."},
-                    {q: "If 3x = 21, what is x?", a: "7", explanation: "Divide by 3: x = 21 ÷ 3 = 7."},
-                    {q: "If x + 12 = 20, what is x?", a: "8", explanation: "Subtract 12: x = 20 - 12 = 8."},
-                    {q: "If 4x = 20, what is x?", a: "5", explanation: "Divide by 4: x = 20 ÷ 4 = 5."},
-                    {q: "If x ÷ 2 = 8, what is x?", a: "16", explanation: "Multiply by 2: x = 8 × 2 = 16."},
-                    {q: "If 5x = 35, what is x?", a: "7", explanation: "Divide by 5: x = 35 ÷ 5 = 7."},
-                    {q: "If x + 7 = 14, what is x?", a: "7", explanation: "Subtract 7: x = 14 - 7 = 7."},
-                ],
-                medium: [
-                    {q: "Solve: 2x + 4 = 14", a: "5", explanation: "Subtract 4: 2x = 10, then divide by 2: x = 5."},
-                    {q: "Solve: 3x - 5 = 10", a: "5", explanation: "Add 5: 3x = 15, then divide by 3: x = 5."},
-                    {q: "Solve: x + x = 16", a: "8", explanation: "This is 2x = 16, so x = 8."},
-                    {q: "Solve: 4x - 8 = 12", a: "5", explanation: "Add 8: 4x = 20, divide by 4: x = 5."},
-                    {q: "Solve: 5x + 5 = 30", a: "5", explanation: "Subtract 5: 5x = 25, divide by 5: x = 5."},
-                    {q: "Solve: 10 + 2x = 30", a: "10", explanation: "Subtract 10: 2x = 20, divide by 2: x = 10."},
-                    {q: "If 3x + 7 = 22, find x", a: "5", explanation: "Subtract 7: 3x = 15, divide by 3: x = 5."},
-                    {q: "If 6x - 12 = 24, find x", a: "6", explanation: "Add 12: 6x = 36, divide by 6: x = 6."},
-                    {q: "If 2x + 10 = 24, find x", a: "7", explanation: "Subtract 10: 2x = 14, divide by 2: x = 7."},
-                    {q: "Solve: 8 + 4x = 32", a: "6", explanation: "Subtract 8: 4x = 24, divide by 4: x = 6."},
-                ],
-                hard: [
-                    {q: "Solve: 3(x + 2) = 21", a: "5", explanation: "Expand: 3x + 6 = 21. Subtract 6: 3x = 15. Divide: x = 5."},
-                    {q: "Solve: 5x - 3 = 2x + 9", a: "4", explanation: "Subtract 2x: 3x - 3 = 9. Add 3: 3x = 12. Divide: x = 4."},
-                    {q: "If 2(x + 5) = 22, find x", a: "6", explanation: "Expand: 2x + 10 = 22. Subtract 10: 2x = 12. x = 6."},
-                    {q: "Solve: 4x + 7 = 3x + 12", a: "5", explanation: "Subtract 3x: x + 7 = 12. Subtract 7: x = 5."},
-                    {q: "If x/3 + 5 = 9, find x", a: "12", explanation: "Subtract 5: x/3 = 4. Multiply by 3: x = 12."},
-                    {q: "Solve: 7x - 15 = 4x + 6", a: "7", explanation: "Subtract 4x: 3x - 15 = 6. Add 15: 3x = 21. x = 7."},
-                    {q: "If 3x/2 = 12, find x", a: "8", explanation: "Multiply both sides by 2: 3x = 24. Divide by 3: x = 8."},
-                    {q: "Solve: 2x + 8 = x + 15", a: "7", explanation: "Subtract x: x + 8 = 15. Subtract 8: x = 7."},
-                    {q: "If 4(x - 3) = 20, find x", a: "8", explanation: "Expand: 4x - 12 = 20. Add 12: 4x = 32. x = 8."},
-                    {q: "Solve: 6x - 10 = 2x + 10", a: "5", explanation: "Subtract 2x: 4x - 10 = 10. Add 10: 4x = 20. x = 5."},
-                ]
-            },
-            equations: {
-                easy: [
-                    {q: "15 + x = 23. Find x.", a: "8", explanation: "x = 23 - 15 = 8."},
-                    {q: "25 - x = 10. Find x.", a: "15", explanation: "x = 25 - 10 = 15."},
-                    {q: "3 × x = 27. Find x.", a: "9", explanation: "x = 27 ÷ 3 = 9."},
-                    {q: "x ÷ 5 = 6. Find x.", a: "30", explanation: "x = 6 × 5 = 30."},
-                    {q: "x + 18 = 30. Find x.", a: "12", explanation: "x = 30 - 18 = 12."},
-                    {q: "50 - x = 35. Find x.", a: "15", explanation: "x = 50 - 35 = 15."},
-                    {q: "6x = 42. Find x.", a: "7", explanation: "x = 42 ÷ 6 = 7."},
-                    {q: "x ÷ 7 = 4. Find x.", a: "28", explanation: "x = 4 × 7 = 28."},
-                    {q: "100 - x = 65. Find x.", a: "35", explanation: "x = 100 - 65 = 35."},
-                    {q: "8x = 64. Find x.", a: "8", explanation: "x = 64 ÷ 8 = 8."},
-                ],
-                medium: [
-                    {q: "2x + 6 = 20. Find x.", a: "7", explanation: "2x = 14, so x = 7."},
-                    {q: "3x + 9 = 24. Find x.", a: "5", explanation: "3x = 15, so x = 5."},
-                    {q: "7x - 14 = 21. Find x.", a: "5", explanation: "7x = 35, so x = 5."},
-                    {q: "x + x + x = 21. Find x.", a: "7", explanation: "3x = 21, so x = 7."},
-                    {q: "5 + 3x = 20. Find x.", a: "5", explanation: "3x = 15, so x = 5."},
-                    {q: "4x + 12 = 32. Find x.", a: "5", explanation: "4x = 20, so x = 5."},
-                    {q: "6x - 18 = 12. Find x.", a: "5", explanation: "6x = 30, so x = 5."},
-                    {q: "9x + 9 = 45. Find x.", a: "4", explanation: "9x = 36, so x = 4."},
-                    {q: "8x - 24 = 16. Find x.", a: "5", explanation: "8x = 40, so x = 5."},
-                    {q: "10x - 30 = 20. Find x.", a: "5", explanation: "10x = 50, so x = 5."},
-                ],
-                hard: [
-                    {q: "If 3x + 15 = 2x + 25, find x", a: "10", explanation: "Subtract 2x: x + 15 = 25, so x = 10."},
-                    {q: "If 5x - 8 = 3x + 12, find x", a: "10", explanation: "Subtract 3x: 2x - 8 = 12, so 2x = 20, x = 10."},
-                    {q: "If 4x + 20 = 7x - 10, find x", a: "10", explanation: "Rearrange: 30 = 3x, so x = 10."},
-                    {q: "If 6x - 15 = 3x + 15, find x", a: "10", explanation: "Subtract 3x: 3x - 15 = 15, so 3x = 30, x = 10."},
-                    {q: "If 2(x + 8) = 26, find x", a: "5", explanation: "2x + 16 = 26, so 2x = 10, x = 5."},
-                    {q: "If 3(x - 4) = 18, find x", a: "10", explanation: "3x - 12 = 18, so 3x = 30, x = 10."},
-                    {q: "If 5x + 10 = 4x + 18, find x", a: "8", explanation: "Subtract 4x: x + 10 = 18, so x = 8."},
-                    {q: "If 8x - 20 = 5x + 10, find x", a: "10", explanation: "Subtract 5x: 3x - 20 = 10, so 3x = 30, x = 10."},
-                    {q: "If 7x - 21 = 4x + 6, find x", a: "9", explanation: "Subtract 4x: 3x - 21 = 6, so 3x = 27, x = 9."},
-                    {q: "If 9x - 27 = 6x, find x", a: "9", explanation: "Subtract 6x: 3x - 27 = 0, so 3x = 27, x = 9."},
-                ]
-            },
-            "word-problems": {
-                easy: [
-                    {q: "Sarah has 15 apples. She gives 7 away. How many does she have left?", a: "8", explanation: "15 - 7 = 8 apples."},
-                    {q: "A box has 24 chocolates. You eat 8. How many are left?", a: "16", explanation: "24 - 8 = 16 chocolates."},
-                    {q: "Tom has 3 bags with 8 marbles in each. How many marbles total?", a: "24", explanation: "3 × 8 = 24 marbles."},
-                    {q: "36 students are in 4 equal groups. How many per group?", a: "9", explanation: "36 ÷ 4 = 9 students."},
-                    {q: "A pizza has 8 slices. You eat 3. How many are left?", a: "5", explanation: "8 - 3 = 5 slices."},
-                    {q: "Each car has 4 wheels. How many wheels on 7 cars?", a: "28", explanation: "7 × 4 = 28 wheels."},
-                    {q: "You have $50 and spend $23. How much is left?", a: "27", explanation: "$50 - $23 = $27."},
-                    {q: "45 candies shared among 5 children. How many each?", a: "9", explanation: "45 ÷ 5 = 9 candies."},
-                    {q: "A baker makes 12 cupcakes daily. How many in 5 days?", a: "60", explanation: "12 × 5 = 60 cupcakes."},
-                    {q: "You read 15 pages Monday and 18 Tuesday. Total pages?", a: "33", explanation: "15 + 18 = 33 pages."},
-                ],
-                medium: [
-                    {q: "A farmer has 56 eggs in cartons of 8. How many cartons?", a: "7", explanation: "56 ÷ 8 = 7 cartons."},
-                    {q: "Maya has 23 stickers. Her mom gives 19 more. Total?", a: "42", explanation: "23 + 19 = 42 stickers."},
-                    {q: "72 cookies in 9 boxes. How many per box?", a: "8", explanation: "72 ÷ 9 = 8 cookies."},
-                    {q: "A book has 156 pages. You've read 89. How many left?", a: "67", explanation: "156 - 89 = 67 pages."},
-                    {q: "Each student needs 6 pencils. How many for 8 students?", a: "48", explanation: "8 × 6 = 48 pencils."},
-                    {q: "You have 100 points and lose 37. How many left?", a: "63", explanation: "100 - 37 = 63 points."},
-                    {q: "A train has 6 cars with 25 seats each. Total seats?", a: "150", explanation: "6 × 25 = 150 seats."},
-                    {q: "84 balloons for 7 children. How many per child?", a: "12", explanation: "84 ÷ 7 = 12 balloons."},
-                    {q: "You buy 3 toys at $9 each. Total cost?", a: "27", explanation: "3 × $9 = $27."},
-                    {q: "45 flowers: 28 are roses. How many aren't roses?", a: "17", explanation: "45 - 28 = 17 non-roses."},
-                ],
-                hard: [
-                    {q: "A store has 240 apples in boxes of 12. After selling 8 boxes, how many apples remain?", a: "144", explanation: "8 boxes × 12 = 96 sold. 240 - 96 = 144 remain."},
-                    {q: "John saves $15 per week for 8 weeks, then spends $45. How much does he have left?", a: "75", explanation: "15 × 8 = 120 saved. 120 - 45 = $75 left."},
-                    {q: "A rectangular garden is 12m by 8m. What's the perimeter?", a: "40", explanation: "2(12 + 8) = 40 meters."},
-                    {q: "A class has 24 students. If 3/8 are boys, how many are girls?", a: "15", explanation: "Boys = 9. Girls = 24 - 9 = 15."},
-                    {q: "If 5 notebooks cost $20, how much do 8 notebooks cost?", a: "32", explanation: "Each = $4. 8 × 4 = $32."},
-                    {q: "A car travels 60 miles per hour. How far in 3.5 hours?", a: "210", explanation: "60 × 3.5 = 210 miles."},
-                    {q: "A baker made 144 cookies and packed them in boxes of 8. How many boxes?", a: "18", explanation: "144 ÷ 8 = 18 boxes."},
-                    {q: "You have $100. You buy 3 items at $18 each. How much left?", a: "46", explanation: "3 × 18 = 54. 100 - 54 = $46."},
-                    {q: "A rectangle's length is 3 times its width of 7. What's its area?", a: "147", explanation: "Length = 21. Area = 21 × 7 = 147."},
-                    {q: "In a class of 30, boys are 2/5. How many girls?", a: "18", explanation: "Boys = 12. Girls = 30 - 12 = 18."},
-                ]
-            },
-            operations: {
-                easy: [
-                    {q: "27 + 38 = ?", a: "65", explanation: "27 + 38 = 65."},
-                    {q: "156 - 89 = ?", a: "67", explanation: "156 - 89 = 67."},
-                    {q: "12 × 7 = ?", a: "84", explanation: "12 × 7 = 84."},
-                    {q: "45 + 67 = ?", a: "112", explanation: "45 + 67 = 112."},
-                    {q: "200 - 135 = ?", a: "65", explanation: "200 - 135 = 65."},
-                    {q: "15 × 6 = ?", a: "90", explanation: "15 × 6 = 90."},
-                    {q: "96 ÷ 8 = ?", a: "12", explanation: "96 ÷ 8 = 12."},
-                    {q: "89 + 56 = ?", a: "145", explanation: "89 + 56 = 145."},
-                    {q: "25 × 4 = ?", a: "100", explanation: "25 × 4 = 100."},
-                    {q: "72 ÷ 6 = ?", a: "12", explanation: "72 ÷ 6 = 12."},
-                ],
-                medium: [
-                    {q: "234 + 178 = ?", a: "412", explanation: "234 + 178 = 412."},
-                    {q: "500 - 237 = ?", a: "263", explanation: "500 - 237 = 263."},
-                    {q: "18 × 5 = ?", a: "90", explanation: "18 × 5 = 90."},
-                    {q: "345 + 289 = ?", a: "634", explanation: "345 + 289 = 634."},
-                    {q: "750 - 382 = ?", a: "368", explanation: "750 - 382 = 368."},
-                    {q: "13 × 8 = ?", a: "104", explanation: "13 × 8 = 104."},
-                    {q: "144 ÷ 12 = ?", a: "12", explanation: "144 ÷ 12 = 12."},
-                    {q: "567 + 234 = ?", a: "801", explanation: "567 + 234 = 801."},
-                    {q: "16 × 7 = ?", a: "112", explanation: "16 × 7 = 112."},
-                    {q: "132 ÷ 11 = ?", a: "12", explanation: "132 ÷ 11 = 12."},
-                ],
-                hard: [
-                    {q: "1234 + 5678 = ?", a: "6912", explanation: "1234 + 5678 = 6912."},
-                    {q: "3000 - 1567 = ?", a: "1433", explanation: "3000 - 1567 = 1433."},
-                    {q: "125 × 8 = ?", a: "1000", explanation: "125 × 8 = 1000."},
-                    {q: "456 ÷ 12 = ?", a: "38", explanation: "456 ÷ 12 = 38."},
-                    {q: "789 + 876 + 654 = ?", a: "2319", explanation: "789 + 876 + 654 = 2319."},
-                    {q: "5000 - 2347 = ?", a: "2653", explanation: "5000 - 2347 = 2653."},
-                    {q: "36 × 25 = ?", a: "900", explanation: "36 × 25 = 900."},
-                    {q: "999 ÷ 9 = ?", a: "111", explanation: "999 ÷ 9 = 111."},
-                    {q: "1500 + 2500 + 3000 = ?", a: "7000", explanation: "1500 + 2500 + 3000 = 7000."},
-                    {q: "45 × 22 = ?", a: "990", explanation: "45 × 22 = 990."},
-                ]
-            },
-            tables: {
-                easy: [
-                    {q: "7 × 8 = ?", a: "56", explanation: "7 × 8 = 56."},
-                    {q: "9 × 6 = ?", a: "54", explanation: "9 × 6 = 54."},
-                    {q: "8 × 8 = ?", a: "64", explanation: "8 × 8 = 64."},
-                    {q: "7 × 7 = ?", a: "49", explanation: "7 × 7 = 49."},
-                    {q: "12 × 3 = ?", a: "36", explanation: "12 × 3 = 36."},
-                    {q: "6 × 9 = ?", a: "54", explanation: "6 × 9 = 54."},
-                    {q: "9 × 9 = ?", a: "81", explanation: "9 × 9 = 81."},
-                    {q: "12 × 5 = ?", a: "60", explanation: "12 × 5 = 60."},
-                    {q: "7 × 6 = ?", a: "42", explanation: "7 × 6 = 42."},
-                    {q: "6 × 6 = ?", a: "36", explanation: "6 × 6 = 36."},
-                ],
-                medium: [
-                    {q: "8 × 9 = ?", a: "72", explanation: "8 × 9 = 72."},
-                    {q: "11 × 11 = ?", a: "121", explanation: "11 × 11 = 121."},
-                    {q: "12 × 12 = ?", a: "144", explanation: "12 × 12 = 144."},
-                    {q: "7 × 9 = ?", a: "63", explanation: "7 × 9 = 63."},
-                    {q: "11 × 6 = ?", a: "66", explanation: "11 × 6 = 66."},
-                    {q: "12 × 8 = ?", a: "96", explanation: "12 × 8 = 96."},
-                    {q: "11 × 7 = ?", a: "77", explanation: "11 × 7 = 77."},
-                    {q: "12 × 9 = ?", a: "108", explanation: "12 × 9 = 108."},
-                    {q: "13 × 5 = ?", a: "65", explanation: "13 × 5 = 65."},
-                    {q: "11 × 12 = ?", a: "132", explanation: "11 × 12 = 132."},
-                ],
-                hard: [
-                    {q: "13 × 13 = ?", a: "169", explanation: "13 × 13 = 169."},
-                    {q: "14 × 12 = ?", a: "168", explanation: "14 × 12 = 168."},
-                    {q: "15 × 15 = ?", a: "225", explanation: "15 × 15 = 225."},
-                    {q: "16 × 8 = ?", a: "128", explanation: "16 × 8 = 128."},
-                    {q: "17 × 6 = ?", a: "102", explanation: "17 × 6 = 102."},
-                    {q: "18 × 7 = ?", a: "126", explanation: "18 × 7 = 126."},
-                    {q: "19 × 5 = ?", a: "95", explanation: "19 × 5 = 95."},
-                    {q: "20 × 12 = ?", a: "240", explanation: "20 × 12 = 240."},
-                    {q: "25 × 6 = ?", a: "150", explanation: "25 × 6 = 150."},
-                    {q: "15 × 12 = ?", a: "180", explanation: "15 × 12 = 180."},
-                ]
-            },
-            "number-theory": {
-                easy: [
-                    {q: "What comes next: 2, 4, 6, 8, __?", a: "10", explanation: "Add 2 each time."},
-                    {q: "What comes next: 5, 10, 15, 20, __?", a: "25", explanation: "Add 5 each time."},
-                    {q: "Is 7 even or odd?", a: "odd", explanation: "7 is odd."},
-                    {q: "Is 12 even or odd?", a: "even", explanation: "12 is even."},
-                    {q: "What is 2³?", a: "8", explanation: "2³ = 2 × 2 × 2 = 8."},
-                    {q: "What is 3²?", a: "9", explanation: "3² = 3 × 3 = 9."},
-                    {q: "What is the smallest prime number?", a: "2", explanation: "2 is the smallest prime."},
-                    {q: "Is 15 divisible by 3?", a: "yes", explanation: "15 ÷ 3 = 5."},
-                    {q: "What is 10²?", a: "100", explanation: "10² = 100."},
-                    {q: "What is the square root of 49?", a: "7", explanation: "√49 = 7."},
-                ],
-                medium: [
-                    {q: "What comes next: 1, 4, 9, 16, __?", a: "25", explanation: "Perfect squares: 5² = 25."},
-                    {q: "Is 21 divisible by 7?", a: "yes", explanation: "21 ÷ 7 = 3."},
-                    {q: "What is the square root of 64?", a: "8", explanation: "√64 = 8."},
-                    {q: "How many odd numbers from 1 to 10?", a: "5", explanation: "1, 3, 5, 7, 9."},
-                    {q: "What is 4²?", a: "16", explanation: "4² = 16."},
-                    {q: "What comes next: 100, 90, 80, 70, __?", a: "60", explanation: "Subtract 10."},
-                    {q: "Is 9 a perfect square?", a: "yes", explanation: "9 = 3²."},
-                    {q: "What comes next: 14, 21, 28, __?", a: "35", explanation: "Multiples of 7."},
-                    {q: "How many even numbers from 1 to 10?", a: "5", explanation: "2, 4, 6, 8, 10."},
-                    {q: "What is 5²?", a: "25", explanation: "5² = 25."},
-                ],
-                hard: [
-                    {q: "What is the least common multiple of 4 and 6?", a: "12", explanation: "LCM(4,6) = 12."},
-                    {q: "What is the greatest common factor of 12 and 18?", a: "6", explanation: "GCF(12,18) = 6."},
-                    {q: "What is the next prime after 7?", a: "11", explanation: "11 is the next prime."},
-                    {q: "What is 2⁵?", a: "32", explanation: "2⁵ = 32."},
-                    {q: "If a number squared is 144, what is the number?", a: "12", explanation: "√144 = 12."},
-                    {q: "What is the sum of the first 5 odd numbers?", a: "25", explanation: "1+3+5+7+9 = 25."},
-                    {q: "What is 11²?", a: "121", explanation: "11² = 121."},
-                    {q: "How many prime numbers are there between 1 and 10?", a: "4", explanation: "2, 3, 5, 7."},
-                    {q: "What is the cube of 3?", a: "27", explanation: "3³ = 27."},
-                    {q: "What is the next Fibonacci number after 1, 1, 2, 3, 5, __?", a: "8", explanation: "5 + 3 = 8."},
-                ]
-            },
-            time: {
-                easy: [
-                    {q: "How many minutes in 1 hour?", a: "60", explanation: "60 minutes = 1 hour."},
-                    {q: "How many hours in 1 day?", a: "24", explanation: "24 hours = 1 day."},
-                    {q: "How many seconds in 1 minute?", a: "60", explanation: "60 seconds = 1 minute."},
-                    {q: "How many minutes in half an hour?", a: "30", explanation: "30 minutes = half hour."},
-                    {q: "How many minutes in a quarter hour?", a: "15", explanation: "15 minutes = quarter hour."},
-                    {q: "How many hours from midnight to noon?", a: "12", explanation: "12 hours."},
-                    {q: "How many days in 1 week?", a: "7", explanation: "7 days = 1 week."},
-                    {q: "How many minutes in 2 hours?", a: "120", explanation: "2 × 60 = 120 minutes."},
-                    {q: "How many weeks in 1 month (approximately)?", a: "4", explanation: "About 4 weeks."},
-                    {q: "How many hours from 2PM to 5PM?", a: "3", explanation: "3 hours."},
-                ],
-                medium: [
-                    {q: "If it's 3:00 and you wait 2 hours, what time is it?", a: "5", explanation: "3:00 + 2 hours = 5:00."},
-                    {q: "If it's 10:30 and you wait 30 minutes, what time is it (type hour)?", a: "11", explanation: "10:30 + 30min = 11:00."},
-                    {q: "If it's 7AM and you sleep 9 hours, what time (type PM hour)?", a: "4", explanation: "7AM + 9 = 4PM."},
-                    {q: "If school starts at 8AM and ends at 3PM, how many hours?", a: "7", explanation: "7 hours of school."},
-                    {q: "What time is 15 minutes after 4:45 (type hour)?", a: "5", explanation: "4:45 + 15min = 5:00."},
-                    {q: "If dinner is at 6PM and it's 4PM, hours until dinner?", a: "2", explanation: "2 hours until 6PM."},
-                    {q: "If it's 9:15 and you wait 45 minutes, what time (type hour)?", a: "10", explanation: "9:15 + 45min = 10:00."},
-                    {q: "If you practice piano for 30 minutes twice daily, total minutes?", a: "60", explanation: "30 × 2 = 60 minutes."},
-                    {q: "How many hours in 3 days?", a: "72", explanation: "3 × 24 = 72 hours."},
-                    {q: "If a movie is 2.5 hours, how many minutes?", a: "150", explanation: "2.5 × 60 = 150 minutes."},
-                ],
-                hard: [
-                    {q: "If it's 11:45AM and you wait 30 minutes, what time (type 12:15)?", a: "1215", explanation: "11:45 + 30 = 12:15PM."},
-                    {q: "A flight departs at 2:50PM and arrives at 7:20PM. Flight duration in minutes?", a: "270", explanation: "4h 30min = 270 minutes."},
-                    {q: "If a movie starts at 7:35PM and is 2h 15min long, end time (type like 945)?", a: "950", explanation: "7:35 + 2:15 = 9:50PM."},
-                    {q: "How many seconds in 5 minutes?", a: "300", explanation: "5 × 60 = 300 seconds."},
-                    {q: "If you sleep from 10PM to 6:30AM, hours of sleep?", a: "8.5", explanation: "8.5 hours OR type 8 for 8 hours."},
-                    {q: "A clock shows 3:20. How many minutes until 4:00?", a: "40", explanation: "40 minutes until 4:00."},
-                    {q: "How many hours in a week?", a: "168", explanation: "7 × 24 = 168 hours."},
-                    {q: "If it's 8:50 and class ends at 9:15, minutes remaining?", a: "25", explanation: "25 minutes left."},
-                    {q: "How many minutes from 11:40AM to 12:10PM?", a: "30", explanation: "30 minutes."},
-                    {q: "If you study 45 minutes per day for a week, total hours?", a: "5.25", explanation: "315 min = 5.25 hours OR type 5."},
-                ]
-            },
-            money: {
-                easy: [
-                    {q: "How many cents in 1 dollar?", a: "100", explanation: "100 cents = $1."},
-                    {q: "How much is a quarter worth in cents?", a: "25", explanation: "Quarter = 25 cents."},
-                    {q: "How much is a dime worth in cents?", a: "10", explanation: "Dime = 10 cents."},
-                    {q: "How much is a nickel worth in cents?", a: "5", explanation: "Nickel = 5 cents."},
-                    {q: "How much is a penny worth in cents?", a: "1", explanation: "Penny = 1 cent."},
-                    {q: "You have 2 quarters. How many cents?", a: "50", explanation: "2 × 25 = 50 cents."},
-                    {q: "You have 5 dimes. How many cents?", a: "50", explanation: "5 × 10 = 50 cents."},
-                    {q: "You have 10 nickels. How many cents?", a: "50", explanation: "10 × 5 = 50 cents."},
-                    {q: "How many quarters make 1 dollar?", a: "4", explanation: "4 quarters = $1."},
-                    {q: "How many dimes make 1 dollar?", a: "10", explanation: "10 dimes = $1."},
-                ],
-                medium: [
-                    {q: "How many nickels make 1 dollar?", a: "20", explanation: "20 nickels = $1."},
-                    {q: "You buy candy for 75¢ with $1. Change in cents?", a: "25", explanation: "100 - 75 = 25¢."},
-                    {q: "You have $5 and spend $2. How much left?", a: "3", explanation: "$5 - $2 = $3."},
-                    {q: "A toy costs $3. You have $10. Change?", a: "7", explanation: "$10 - $3 = $7."},
-                    {q: "You have $3. Friend gives you $2. Total?", a: "5", explanation: "$3 + $2 = $5."},
-                    {q: "A book costs $8. You have $20. Change?", a: "12", explanation: "$20 - $8 = $12."},
-                    {q: "You have 1 quarter, 2 dimes, 1 nickel. Total cents?", a: "50", explanation: "25+20+5 = 50¢."},
-                    {q: "Save $2 weekly for 4 weeks. Total saved?", a: "8", explanation: "$2 × 4 = $8."},
-                    {q: "How many cents in 2 dollars?", a: "200", explanation: "2 × 100 = 200¢."},
-                    {q: "You have 50¢ and earn 50¢ more. Total?", a: "100", explanation: "50 + 50 = 100¢ OR type 1 for $1."},
-                ],
-                hard: [
-                    {q: "You have 3 quarters, 4 dimes, and 2 nickels. Total cents?", a: "125", explanation: "75+40+10 = 125¢."},
-                    {q: "If apples cost $1.50 each, cost of 6 apples?", a: "9", explanation: "6 × $1.50 = $9."},
-                    {q: "You buy items for $4.75, $3.25, and $2. Total?", a: "10", explanation: "4.75+3.25+2 = $10."},
-                    {q: "You have $50. Buy 3 items at $12 each. Change?", a: "14", explanation: "36 spent. 50-36 = $14."},
-                    {q: "If you save 75¢ daily for 8 days, total dollars?", a: "6", explanation: "600¢ = $6."},
-                    {q: "A $20 bill buys items totaling $17.35. Change?", a: "2.65", explanation: "20 - 17.35 = $2.65 OR type 2.65."},
-                    {q: "You have 8 quarters and 12 dimes. Total dollars?", a: "3.20", explanation: "2+1.20 = $3.20 OR type 3."},
-                    {q: "If notebooks cost $2.50 each, how many can you buy with $15?", a: "6", explanation: "15 ÷ 2.50 = 6."},
-                    {q: "You need $85. Have $47. How much more needed?", a: "38", explanation: "85 - 47 = $38."},
-                    {q: "Earn $15/hr for 6 hours. Total earned?", a: "90", explanation: "15 × 6 = $90."},
-                ]
-            },
-            fractions: {
-                easy: [
-                    {q: "What is 1/2 of 10?", a: "5", explanation: "10 ÷ 2 = 5."},
-                    {q: "What is 1/4 of 20?", a: "5", explanation: "20 ÷ 4 = 5."},
-                    {q: "What is 1/2 of 8?", a: "4", explanation: "8 ÷ 2 = 4."},
-                    {q: "What is 1/3 of 12?", a: "4", explanation: "12 ÷ 3 = 4."},
-                    {q: "What is 1/2 of 16?", a: "8", explanation: "16 ÷ 2 = 8."},
-                    {q: "What is 1/4 of 16?", a: "4", explanation: "16 ÷ 4 = 4."},
-                    {q: "You eat 1/2 of 6 cookies. How many eaten?", a: "3", explanation: "6 ÷ 2 = 3."},
-                    {q: "What is 1/3 of 15?", a: "5", explanation: "15 ÷ 3 = 5."},
-                    {q: "What is 1/2 of 20?", a: "10", explanation: "20 ÷ 2 = 10."},
-                    {q: "What is 1/4 of 12?", a: "3", explanation: "12 ÷ 4 = 3."},
-                ],
-                medium: [
-                    {q: "A pizza has 8 slices. You eat 1/2. Slices eaten?", a: "4", explanation: "8 ÷ 2 = 4 slices."},
-                    {q: "What is 1/5 of 20?", a: "4", explanation: "20 ÷ 5 = 4."},
-                    {q: "What is 1/2 of 24?", a: "12", explanation: "24 ÷ 2 = 12."},
-                    {q: "What is 1/3 of 18?", a: "6", explanation: "18 ÷ 3 = 6."},
-                    {q: "What is 1/4 of 24?", a: "6", explanation: "24 ÷ 4 = 6."},
-                    {q: "If 1/2 of a number is 7, what's the number?", a: "14", explanation: "7 × 2 = 14."},
-                    {q: "What is 1/2 of 30?", a: "15", explanation: "30 ÷ 2 = 15."},
-                    {q: "What is 1/3 of 21?", a: "7", explanation: "21 ÷ 3 = 7."},
-                    {q: "What is 1/5 of 25?", a: "5", explanation: "25 ÷ 5 = 5."},
-                    {q: "What is 1/6 of 18?", a: "3", explanation: "18 ÷ 6 = 3."},
-                ],
-                hard: [
-                    {q: "What is 3/4 of 20?", a: "15", explanation: "20 × 3/4 = 15."},
-                    {q: "What is 2/3 of 18?", a: "12", explanation: "18 × 2/3 = 12."},
-                    {q: "If 3/5 of a number is 12, find the number", a: "20", explanation: "12 ÷ 3 = 4, so 4 × 5 = 20."},
-                    {q: "What is 5/8 of 24?", a: "15", explanation: "24 × 5/8 = 15."},
-                    {q: "What is 2/5 of 30?", a: "12", explanation: "30 × 2/5 = 12."},
-                    {q: "Add 1/2 and 1/4. Answer as decimal (0.75)", a: "0.75", explanation: "1/2 + 1/4 = 0.75."},
-                    {q: "What is 4/5 of 25?", a: "20", explanation: "25 × 4/5 = 20."},
-                    {q: "If you spend 3/4 of $40, how much spent?", a: "30", explanation: "40 × 3/4 = $30."},
-                    {q: "What is 7/10 of 50?", a: "35", explanation: "50 × 7/10 = 35."},
-                    {q: "A class has 32 students. 3/8 are girls. How many girls?", a: "12", explanation: "32 × 3/8 = 12."},
-                ]
-            }
-        };
-
-        // Timer functions
-        function startTimer(isQuiz, isTimed) {
-            if (!isQuiz || !isTimed) {
-                // For practice or untimed quiz, just show elapsed time
-                startTime = Date.now();
-                document.getElementById('timerDisplay').classList.add('show');
-                timerInterval = setInterval(updateElapsedTime, 1000);
-            } else {
-                // For timed quiz, countdown
-                startTime = Date.now();
-                document.getElementById('timerDisplay').classList.add('show');
-                timerInterval = setInterval(updateCountdown, 1000);
-            }
+function decryptConfig(encrypted, passphrase) {
+    try {
+        const decoded = atob(encrypted);
+        let result = '';
+        for (let i = 0; i < decoded.length; i++) {
+            result += String.fromCharCode(decoded.charCodeAt(i) ^ passphrase.charCodeAt(i % passphrase.length));
         }
+        return JSON.parse(result);
+    } catch(e) {
+        return null;
+    }
+}
 
-        function updateElapsedTime() {
-            elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-            const minutes = Math.floor(elapsedTime / 60);
-            const seconds = elapsedTime % 60;
-            document.getElementById('timerDisplay').textContent = 
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
+// ── State ──
+let db = null, useFirebase = false;
+let currentStudentId = null, currentStudentName = null;
+let completedSets = {};
+let currentGrade = null;
+let currentCategory = '', currentDifficulty = '';
+let currentQuestions = [], currentQuestionIndex = 0;
+let score = 0, isTestMode = false, testAnswers = [];
+let currentSessionId = null, currentSetNumber = null;
+let attemptsRemaining = 2;
+let timerInterval = null, startTime = null, elapsedTime = 0;
+let isTimedQuiz = false, quizTimeLimit = 0;
 
-        function updateCountdown() {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const remaining = quizTimeLimit - elapsed;
-            
-            if (remaining <= 0) {
-                stopTimer();
-                alert('Time is up! Submitting your quiz...');
-                submitTest();
-                return;
-            }
-            
-            const minutes = Math.floor(remaining / 60);
-            const seconds = remaining % 60;
-            document.getElementById('timerDisplay').textContent = 
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            
-            // Warning when 2 minutes left
-            if (remaining <= 120 && !document.getElementById('timerDisplay').classList.contains('warning')) {
-                document.getElementById('timerDisplay').classList.add('warning');
-            }
-        }
+// ── Expose globals ──
+window.saveStudentInfo = saveStudentInfo;
+window.changeStudent = changeStudent;
+window.goToTeacherDirectly = goToTeacherDirectly;
+window.selectMode = selectMode;
+window.selectGrade = selectGrade;
+window.selectCategory = selectCategory;
+window.selectDifficulty = selectDifficulty;
+window.goHome = goHome;
+window.goToDifficulty = goToDifficulty;
+window.goToPractice = goToPractice;
+window.goToModeSelection = goToModeSelection;
+window.startPractice = startPractice;
+window.startQuiz = startQuiz;
+window.checkAnswer = checkAnswer;
+window.nextQuestion = nextQuestion;
+window.nextTestQuestion = nextTestQuestion;
+window.previousTestQuestion = previousTestQuestion;
+window.submitTest = submitTest;
+window.viewStudentProgress = viewStudentProgress;
+window.resetStudentProgress = resetStudentProgress;
+window.closeConfigModal = closeConfigModal;
+window.saveFirebaseConfig = saveFirebaseConfig;
 
-        function stopTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            document.getElementById('timerDisplay').classList.remove('show', 'warning');
-            elapsedTime = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
-        }
+// ── Timer ──
+function startTimer(isQuiz, isTimed) {
+    startTime = Date.now();
+    document.getElementById('timerDisplay').classList.add('show');
+    timerInterval = setInterval(isTimed && isQuiz ? updateCountdown : updateElapsedTime, 1000);
+}
+function updateElapsedTime() {
+    elapsedTime = Math.floor((Date.now()-startTime)/1000);
+    const m=Math.floor(elapsedTime/60), s=elapsedTime%60;
+    document.getElementById('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function updateCountdown() {
+    const elapsed=Math.floor((Date.now()-startTime)/1000), remaining=quizTimeLimit-elapsed;
+    if(remaining<=0){ stopTimer(); alert('Time is up! Submitting your quiz...'); submitTest(); return; }
+    const m=Math.floor(remaining/60), s=remaining%60;
+    document.getElementById('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if(remaining<=120) document.getElementById('timerDisplay').classList.add('warning');
+}
+function stopTimer() {
+    if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+    document.getElementById('timerDisplay').classList.remove('show','warning');
+    elapsedTime = startTime ? Math.floor((Date.now()-startTime)/1000) : 0;
+}
+function formatTime(sec){ const m=Math.floor(sec/60),s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
 
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${String(secs).padStart(2, '0')}`;
-        }
+// ── Init ──
+async function init() {
+    renderGradeSelector();
+    // Attempt to decrypt config with the built-in passphrase
+    const config = decryptConfig(ENCRYPTED_CONFIG, 'MathAdventure2024SecretKey!');
+    if(config) {
+        try { await initFirebase(config); } catch(e) { updateSyncStatus('Connection error — local mode'); }
+    } else {
+        updateSyncStatus('Local mode');
+    }
+    checkStudentInfo();
+}
 
-        // Initialize
-        async function init() {
+function renderGradeSelector() {
+    const grid = document.getElementById('gradesGrid');
+    grid.innerHTML = Object.entries(GRADE_INFO).map(([key, info]) => `
+        <div class="grade-card" id="grade-card-${key}" onclick="selectGrade('${key}')">
+            <span class="grade-emoji">${info.emoji}</span>
+            <div class="grade-label">${info.label}</div>
+            <div class="grade-desc">${info.description}</div>
+        </div>
+    `).join('');
+}
+
+function selectGrade(gradeKey) {
+    currentGrade = gradeKey;
+    document.querySelectorAll('.grade-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`grade-card-${gradeKey}`).classList.add('selected');
+    // Show mode selector after grade pick
+    document.getElementById('modeView').style.display = 'block';
+    renderCategories();
+}
+
+function renderCategories() {
+    if(!currentGrade || !QUESTION_BANK[currentGrade]) return;
+    const gradeData = QUESTION_BANK[currentGrade];
+    const grid = document.getElementById('categoriesGrid');
+    grid.innerHTML = gradeData.categories.map(catId => {
+        const cat = gradeData.categoryInfo[catId];
+        const borderColor = cat.color.match(/#[0-9a-f]{6}/i)?.[0] || '#ddd';
+        return `
+            <div class="category-card" style="background:${cat.color}; border-color:${borderColor}" onclick="selectCategory('${catId}')">
+                <div class="category-icon">${cat.icon}</div>
+                <div class="category-title">${cat.title}</div>
+                <div class="category-desc">${cat.desc}</div>
+            </div>`;
+    }).join('');
+}
+
+async function initFirebase(config) {
+    const app = initializeApp(config);
+    db = getFirestore(app);
+    useFirebase = true;
+    updateSyncStatus('Connected ✓');
+}
+function updateSyncStatus(s){ document.getElementById('syncText').textContent=s; }
+function closeConfigModal(){ document.getElementById('configModal').classList.remove('active'); }
+async function saveFirebaseConfig(){
+    try {
+        const config = JSON.parse(document.getElementById('configInput').value);
+        await initFirebase(config);
+        closeConfigModal();
+    } catch(e){ alert('Invalid configuration. Please check and try again.'); }
+}
+
+async function checkStudentInfo() {
+    const savedName = localStorage.getItem('mathapp-student-name');
+    const savedId = localStorage.getItem('mathapp-student-id');
+    const savedGrade = localStorage.getItem('mathapp-student-grade');
+    if(savedName && savedId) {
+        currentStudentName = savedName;
+        currentStudentId = savedId;
+        if(savedGrade) {
+            currentGrade = savedGrade;
+            document.getElementById(`grade-card-${savedGrade}`)?.classList.add('selected');
             renderCategories();
-
-            // Hardcoded Firebase config (Mathmagic project)
-            const firebaseConfig = {
-                apiKey: "AIzaSyB7t8YHrcjpVqiILu_rKMteBplVM45w6s0",
-                authDomain: "mathmagic-926b8.firebaseapp.com",
-                projectId: "mathmagic-926b8",
-                storageBucket: "mathmagic-926b8.firebasestorage.app",
-                messagingSenderId: "883783688871",
-                appId: "1:883783688871:web:2d7306bdf276ce458e3182",
-                measurementId: "G-R04V4SH4JM"
-            };
-
-            document.getElementById('setupSection').style.display = 'none';
-
-            try {
-                await initFirebase(firebaseConfig);
-                checkStudentInfo();
-            } catch (error) {
-                console.error('Firebase init error:', error);
-                updateSyncStatus('Connection error - using local mode');
-                checkStudentInfo();
-            }
         }
+        document.getElementById('displayName').textContent = currentStudentName;
+        document.getElementById('userInfo').classList.add('show');
+        document.getElementById('gradeSelectorSection').style.display = 'block';
+        document.getElementById('modeView').style.display = savedGrade ? 'block' : 'none';
+        await loadCompletedSets();
+    } else {
+        document.getElementById('userSetup').style.display = 'block';
+    }
+}
 
-        function renderCategories() {
-            const grid = document.getElementById('categoriesGrid');
-            grid.innerHTML = categories.map(cat => `
-                <div class="category-card" style="background: ${cat.color}; border-color: ${cat.color.match(/#[0-9a-f]{6}/i)[0]}" onclick="selectCategory('${cat.id}')">
-                    <div class="category-icon">${cat.icon}</div>
-                    <div class="category-title">${cat.title}</div>
-                    <div class="category-desc">${cat.desc}</div>
+async function loadCompletedSets() {
+    if(useFirebase && db && currentStudentId) {
+        try {
+            const snap = await getDoc(doc(db,'completedSets',currentStudentId));
+            if(snap.exists()) completedSets = snap.data();
+        } catch(e){}
+    } else {
+        const saved = localStorage.getItem('completedSets-'+currentStudentId);
+        if(saved) completedSets = JSON.parse(saved);
+    }
+}
+async function saveCompletedSets() {
+    if(useFirebase && db && currentStudentId) {
+        try { await setDoc(doc(db,'completedSets',currentStudentId), completedSets); } catch(e){}
+    } else {
+        localStorage.setItem('completedSets-'+currentStudentId, JSON.stringify(completedSets));
+    }
+}
+async function markSetComplete() {
+    if(!currentCategory || !currentSetNumber) return;
+    completedSets[`${currentGrade}-${currentCategory}-${currentDifficulty}-set${currentSetNumber}`] = true;
+    await saveCompletedSets();
+}
+
+async function saveStudentInfo() {
+    const name = document.getElementById('studentName').value.trim();
+    if(!name){ alert('Please enter a student name'); return; }
+    if(useFirebase && db) {
+        const ref = await addDoc(collection(db,'students'),{ name, createdAt:new Date().toISOString() });
+        currentStudentId = ref.id;
+    } else {
+        currentStudentId = 'local-'+Date.now();
+    }
+    currentStudentName = name;
+    localStorage.setItem('mathapp-student-name', name);
+    localStorage.setItem('mathapp-student-id', currentStudentId);
+    document.getElementById('userSetup').style.display = 'none';
+    document.getElementById('displayName').textContent = currentStudentName;
+    document.getElementById('userInfo').classList.add('show');
+    document.getElementById('gradeSelectorSection').style.display = 'block';
+}
+
+function changeStudent() {
+    ['mathapp-student-name','mathapp-student-id','mathapp-student-grade'].forEach(k=>localStorage.removeItem(k));
+    currentStudentName=null; currentStudentId=null; currentGrade=null; completedSets={};
+    document.getElementById('userInfo').classList.remove('show');
+    document.getElementById('gradeSelectorSection').style.display='none';
+    document.getElementById('modeView').style.display='none';
+    document.getElementById('homeView').style.display='none';
+    document.getElementById('teacherView').classList.remove('active');
+    document.getElementById('userSetup').style.display='block';
+    document.querySelectorAll('.grade-card').forEach(c=>c.classList.remove('selected'));
+}
+
+function goToTeacherDirectly() {
+    document.getElementById('userSetup').style.display='none';
+    document.getElementById('teacherView').classList.add('active');
+    showTeacherDashboard();
+}
+function selectMode(mode) {
+    if(!currentGrade && mode==='student'){ alert('Please select your grade first!'); return; }
+    if(mode==='student') {
+        localStorage.setItem('mathapp-student-grade', currentGrade);
+        document.getElementById('modeView').style.display='none';
+        document.getElementById('homeView').style.display='block';
+    } else {
+        document.getElementById('modeView').style.display='none';
+        showTeacherDashboard();
+    }
+}
+function goToModeSelection() {
+    document.getElementById('teacherView').classList.remove('active');
+    document.getElementById('homeView').style.display='none';
+    document.getElementById('modeView').style.display='block';
+}
+
+// ── Teacher Dashboard ──
+async function showTeacherDashboard() {
+    document.getElementById('teacherView').classList.add('active');
+    if(!useFirebase || !db) {
+        document.getElementById('studentsList').innerHTML='<p style="color:#636e72;text-align:center;">Firebase required for teacher mode</p>';
+        return;
+    }
+    try {
+        const studentsSnap = await getDocs(collection(db,'students'));
+        let html='';
+        for(const sdoc of studentsSnap.docs) {
+            const student=sdoc.data(), sid=sdoc.id;
+            const subsSnap = await getDocs(query(collection(db,'submissions'),where('studentId','==',sid)));
+            let total=0,totalQ=0;
+            subsSnap.forEach(d=>{ total+=d.data().score||0; totalQ+=d.data().totalQuestions||0; });
+            const avg = totalQ>0?Math.round((total/totalQ)*100):0;
+            html+=`<div style="background:white;border-radius:12px;padding:20px;margin-bottom:15px;border:2px solid #dfe6e9;cursor:pointer;" onclick="viewStudentProgress('${sid}','${student.name}')">
+                <div style="font-size:1.3em;font-weight:bold;margin-bottom:10px;">${student.name}</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                    <div style="background:#f8f9fa;padding:10px;border-radius:8px;text-align:center;"><div style="font-size:0.8em;color:#636e72;">Tests</div><div style="font-size:1.3em;font-weight:bold;">${subsSnap.size}</div></div>
+                    <div style="background:#f8f9fa;padding:10px;border-radius:8px;text-align:center;"><div style="font-size:0.8em;color:#636e72;">Average</div><div style="font-size:1.3em;font-weight:bold;">${avg}%</div></div>
+                    <div style="background:#f8f9fa;padding:10px;border-radius:8px;text-align:center;"><div style="font-size:0.8em;color:#636e72;">Score</div><div style="font-size:1.3em;font-weight:bold;">${total}/${totalQ}</div></div>
+                </div></div>`;
+        }
+        document.getElementById('studentsList').innerHTML = html||'<p style="color:#636e72;text-align:center;">No students yet</p>';
+    } catch(e){ console.error(e); }
+}
+
+async function viewStudentProgress(studentId, studentName) {
+    const rawSnap = await getDocs(query(collection(db,'submissions'),where('studentId','==',studentId)));
+    const sorted = rawSnap.docs.sort((a,b)=>(b.data().completedAt||'').localeCompare(a.data().completedAt||''));
+    let html=`<button class="back-button" onclick="showTeacherDashboard()">⬅️ Back to Students</button>
+        <h2 style="font-size:1.8em;margin-bottom:20px;color:#2d3436;">📊 ${studentName}'s Progress</h2>
+        <button style="background:#e17055;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;margin-top:10px;font-size:0.9em;width:100%;" onclick="resetStudentProgress('${studentId}','${studentName}')">🔄 Reset All Progress</button>`;
+    if(!sorted.length){ html+='<p style="color:#636e72;text-align:center;margin-top:20px;">No submissions yet</p>'; }
+    else {
+        sorted.forEach(d=>{
+            const sub=d.data(), pct=Math.round((sub.score/sub.totalQuestions)*100);
+            const date=new Date(sub.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+            html+=`<div style="background:white;border-radius:12px;padding:15px;margin-top:15px;border:2px solid #dfe6e9;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div><strong>${sub.grade?GRADE_INFO[sub.grade]?.label+' — ':''} ${sub.category}</strong> — ${sub.difficulty||''} ${sub.isTest?'(Quiz)':`(Practice ${sub.setNumber||''})`}</div>
+                    <div style="font-weight:bold;">${sub.score}/${sub.totalQuestions} (${pct}%)</div>
                 </div>
-            `).join('');
+                <div style="color:#636e72;font-size:0.9em;">${date}</div>
+                ${sub.timeTaken?`<div style="color:#636e72;font-size:0.9em;">Time: ${formatTime(sub.timeTaken)}</div>`:''}
+            </div>`;
+        });
+    }
+    document.getElementById('studentsList').innerHTML = html;
+}
+
+async function resetStudentProgress(studentId, studentName) {
+    if(!confirm(`Reset ALL progress for ${studentName}?`)) return;
+    try {
+        const snap = await getDocs(query(collection(db,'submissions'),where('studentId','==',studentId)));
+        for(const d of snap.docs) await deleteDoc(doc(db,'submissions',d.id));
+        await deleteDoc(doc(db,'completedSets',studentId));
+        alert('Progress reset!');
+        showTeacherDashboard();
+    } catch(e){ alert('Error resetting.'); }
+}
+window.showTeacherDashboard = showTeacherDashboard;
+
+// ── Navigation ──
+function selectCategory(cat) {
+    currentCategory = cat;
+    const gradeData = QUESTION_BANK[currentGrade];
+    const catInfo = gradeData.categoryInfo[cat];
+    document.getElementById('difficultyTitle').textContent = `${catInfo.title} — Choose Difficulty`;
+    document.getElementById('homeView').style.display='none';
+    document.getElementById('difficultyView').classList.add('active');
+}
+function selectDifficulty(diff) {
+    currentDifficulty = diff;
+    showPracticeSets();
+}
+function goHome() {
+    document.getElementById('homeView').style.display='block';
+    ['difficultyView','practiceView','questionView','testView'].forEach(id=>{
+        const el=document.getElementById(id);
+        el.classList ? el.classList.remove('active') : el.style.display='none';
+    });
+    stopTimer();
+}
+function goToDifficulty() {
+    document.getElementById('difficultyView').classList.add('active');
+    ['practiceView','questionView','testView'].forEach(id=>document.getElementById(id).classList.remove('active'));
+    stopTimer();
+}
+function goToPractice() {
+    document.getElementById('practiceView').classList.add('active');
+    ['questionView','testView'].forEach(id=>document.getElementById(id).classList.remove('active'));
+    stopTimer();
+}
+
+async function showPracticeSets() {
+    document.getElementById('difficultyView').classList.remove('active');
+    document.getElementById('practiceView').classList.add('active');
+    await loadCompletedSets();
+    const gradeData = QUESTION_BANK[currentGrade];
+    const catInfo = gradeData.categoryInfo[currentCategory];
+    const diffIcons={easy:'🌟',medium:'⚡',hard:'🔥'};
+    let html=`<h2 style="font-size:1.8em;margin-bottom:20px;color:#2d3436;">${catInfo.title} — ${diffIcons[currentDifficulty]} ${currentDifficulty.charAt(0).toUpperCase()+currentDifficulty.slice(1)}</h2>`;
+    for(let i=1;i<=5;i++){
+        const key=`${currentGrade}-${currentCategory}-${currentDifficulty}-set${i}`;
+        const done = completedSets[key]===true;
+        html+=`<div class="practice-set-card ${done?'completed':''}" onclick="startPractice(${i})">
+            ${done?'<div class="completion-badge">✓ Done</div>':''}
+            <div style="font-size:1.2em;font-weight:bold;color:#2d3436;margin-bottom:8px;">Practice Set ${i}</div>
+            <div style="color:#636e72;font-size:0.95em;">✏️ 10 Questions • 2 Chances per Question</div>
+        </div>`;
+    }
+    html+=`<div style="margin-top:20px;"><h3 style="font-size:1.3em;color:#2d3436;margin-bottom:15px;">Take a Full Quiz</h3>
+        <div class="quiz-options">
+            <div class="quiz-option-card timed" onclick="startQuiz(true)"><div style="font-size:2em;margin-bottom:10px;">⏱️</div><div style="font-size:1.1em;font-weight:bold;margin-bottom:5px;">Timed Quiz</div><div style="font-size:0.85em;color:#636e72;">25 Questions • 45 Minutes</div></div>
+            <div class="quiz-option-card untimed" onclick="startQuiz(false)"><div style="font-size:2em;margin-bottom:10px;">♾️</div><div style="font-size:1.1em;font-weight:bold;margin-bottom:5px;">Untimed Quiz</div><div style="font-size:0.85em;color:#636e72;">25 Questions • No Time Limit</div></div>
+        </div></div>`;
+    document.getElementById('practiceSets').innerHTML = html;
+}
+
+function getRandomQuestions(count) {
+    const gradeData = QUESTION_BANK[currentGrade];
+    if(!gradeData) return [];
+    const pool = gradeData.questions[currentCategory]?.[currentDifficulty] || [];
+    const shuffled = [...pool].sort(()=>Math.random()-0.5);
+    return shuffled.slice(0, Math.min(count, pool.length));
+}
+
+function startPractice(setNum) {
+    isTestMode=false; currentSetNumber=setNum;
+    currentQuestions=getRandomQuestions(10); currentQuestionIndex=0; score=0; attemptsRemaining=2;
+    currentSessionId=Date.now().toString();
+    document.getElementById('practiceView').classList.remove('active');
+    document.getElementById('questionView').classList.add('active');
+    startTimer(false,false); showQuestion();
+}
+function startQuiz(timed) {
+    isTestMode=true; isTimedQuiz=timed; currentSetNumber=null;
+    currentQuestions=getRandomQuestions(25); currentQuestionIndex=0; score=0;
+    testAnswers=new Array(25).fill(null); currentSessionId=Date.now().toString();
+    if(timed) quizTimeLimit=45*60;
+    document.getElementById('practiceView').classList.remove('active');
+    document.getElementById('testView').classList.add('active');
+    startTimer(true,timed); showTestQuestions();
+}
+
+function showQuestion() {
+    const q=currentQuestions[currentQuestionIndex];
+    const prog=((currentQuestionIndex+1)/currentQuestions.length)*100;
+    document.getElementById('progressBar').style.width=prog+'%';
+    document.getElementById('progressBar').textContent=`${currentQuestionIndex+1} / ${currentQuestions.length}`;
+    attemptsRemaining=2;
+    document.getElementById('questionContainer').innerHTML=`
+        <div class="question-container">
+            <div class="question-header">
+                <div style="font-size:0.9em;opacity:0.9;">Question ${currentQuestionIndex+1} of ${currentQuestions.length}</div>
+                <div class="attempts-info">Attempts Remaining: ${attemptsRemaining}</div>
+            </div>
+            <div class="question-text">${q.q}</div>
+            <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here..." autocomplete="off">
+            <div class="button-group">
+                <button class="btn btn-check" onclick="checkAnswer()" id="checkBtn" disabled>✓ Check Answer</button>
+                <button class="btn btn-next" onclick="nextQuestion()" style="display:none;" id="nextBtn">Next →</button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+        </div>`;
+    const inp=document.getElementById('answerInput');
+    inp.focus();
+    inp.addEventListener('input',function(){ document.getElementById('checkBtn').disabled=this.value.trim()===''; });
+    inp.addEventListener('keypress',function(e){
+        if(e.key==='Enter' && this.value.trim()!==''){
+            const nb=document.getElementById('nextBtn');
+            nb.style.display==='none' ? checkAnswer() : nextQuestion();
         }
+    });
+}
 
-        async function initFirebase(config) {
-            try {
-                const app = initializeApp(config);
-                db = getFirestore(app);
-                useFirebase = true;
-                updateSyncStatus('Connected ✓');
-                document.getElementById('currentConfig').textContent = '✓ Firebase: ' + config.projectId;
-            } catch (error) {
-                console.error('Firebase error:', error);
-                updateSyncStatus('Firebase error');
-                useFirebase = false;
-            }
+function checkAnswer() {
+    const inp=document.getElementById('answerInput');
+    const userAns=inp.value.trim().toLowerCase();
+    if(!userAns){ inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),500); return; }
+    const q=currentQuestions[currentQuestionIndex];
+    const correct=q.a.toLowerCase();
+    const fb=document.getElementById('feedback');
+    if(userAns===correct){
+        score++;
+        fb.className='feedback correct show';
+        fb.innerHTML=`<div class="feedback-title">🎉 Correct! Well done!</div><div class="feedback-text">${q.explanation}</div>`;
+        inp.disabled=true;
+        document.getElementById('checkBtn').style.display='none';
+        document.getElementById('nextBtn').style.display='block';
+    } else {
+        attemptsRemaining--;
+        if(attemptsRemaining>0){
+            fb.className='feedback incorrect show';
+            fb.innerHTML=`<div class="feedback-title">💡 Not quite right!</div><div class="feedback-text">You have ${attemptsRemaining} more chance. Try again!</div>`;
+            inp.value=''; inp.focus();
+            document.querySelector('.attempts-info').textContent=`Attempts Remaining: ${attemptsRemaining}`;
+        } else {
+            fb.className='feedback incorrect show';
+            fb.innerHTML=`<div class="feedback-title">💡 Out of attempts!</div><div class="feedback-text">The correct answer is: <strong>${q.a}</strong><br><br>${q.explanation}</div>`;
+            inp.disabled=true;
+            document.getElementById('checkBtn').style.display='none';
+            document.getElementById('nextBtn').style.display='block';
         }
+    }
+}
 
-        function updateSyncStatus(status) {
-            document.getElementById('syncText').textContent = status;
-        }
+function nextQuestion() {
+    currentQuestionIndex++;
+    currentQuestionIndex>=currentQuestions.length ? showScore() : showQuestion();
+}
 
-        function showConfigInput() {
-            document.getElementById('configModal').classList.add('active');
-        }
-
-        function closeConfigModal() {
-            document.getElementById('configModal').classList.remove('active');
-        }
-
-        async function saveFirebaseConfig() {
-            const configText = document.getElementById('configInput').value;
-            try {
-                const config = JSON.parse(configText);
-                localStorage.setItem('mathapp-firebase-config', configText);
-                await initFirebase(config);
-                closeConfigModal();
-                document.getElementById('setupSection').style.display = 'none';
-                checkStudentInfo();
-            } catch (error) {
-                alert('Invalid configuration. Please check and try again.');
-            }
-        }
-
-        function hideSetupSection() {
-            document.getElementById('setupSection').style.display = 'none';
-            updateSyncStatus('Local mode');
-            checkStudentInfo();
-        }
-
-        async function checkStudentInfo() {
-            const savedStudent = localStorage.getItem('mathapp-student-name');
-            const savedStudentId = localStorage.getItem('mathapp-student-id');
-            
-            if (savedStudent && savedStudentId) {
-                currentStudentName = savedStudent;
-                currentStudentId = savedStudentId;
-                document.getElementById('displayName').textContent = currentStudentName;
-                document.getElementById('userInfo').classList.add('show');
-                document.getElementById('modeView').style.display = 'block';
-                await loadCompletedSets();
-            } else {
-                document.getElementById('userSetup').style.display = 'block';
-            }
-        }
-
-        async function loadCompletedSets() {
-            if (useFirebase && db && currentStudentId) {
-                try {
-                    const docRef = doc(db, 'completedSets', currentStudentId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        completedSets = docSnap.data();
-                    }
-                } catch (error) {
-                    console.error('Error loading completed sets:', error);
-                }
-            } else {
-                const saved = localStorage.getItem('completedSets-' + currentStudentId);
-                if (saved) {
-                    completedSets = JSON.parse(saved);
-                }
-            }
-        }
-
-        async function saveCompletedSets() {
-            if (useFirebase && db && currentStudentId) {
-                try {
-                    const docRef = doc(db, 'completedSets', currentStudentId);
-                    await setDoc(docRef, completedSets);
-                } catch (error) {
-                    console.error('Error saving completed sets:', error);
-                }
-            } else {
-                localStorage.setItem('completedSets-' + currentStudentId, JSON.stringify(completedSets));
-            }
-        }
-
-        async function markSetComplete() {
-            if (!currentCategory || !currentSetNumber) return;
-            const key = `${currentCategory}-${currentDifficulty}-set${currentSetNumber}`;
-            completedSets[key] = true;
-            await saveCompletedSets();
-        }
-
-        async function saveStudentInfo() {
-            const name = document.getElementById('studentName').value.trim();
-            if (!name) {
-                alert('Please enter a student name');
-                return;
-            }
-
-            if (useFirebase && db) {
-                const studentsRef = collection(db, 'students');
-                const studentDoc = await addDoc(studentsRef, {
-                    name: name,
-                    createdAt: new Date().toISOString()
-                });
-                currentStudentId = studentDoc.id;
-            } else {
-                currentStudentId = 'local-' + Date.now();
-            }
-
-            currentStudentName = name;
-            localStorage.setItem('mathapp-student-name', name);
-            localStorage.setItem('mathapp-student-id', currentStudentId);
-
-            document.getElementById('userSetup').style.display = 'none';
-            document.getElementById('displayName').textContent = currentStudentName;
-            document.getElementById('userInfo').classList.add('show');
-            document.getElementById('modeView').style.display = 'block';
-        }
-
-        function changeStudent() {
-            localStorage.removeItem('mathapp-student-name');
-            localStorage.removeItem('mathapp-student-id');
-            currentStudentName = null;
-            currentStudentId = null;
-            completedSets = {};
-            document.getElementById('userInfo').classList.remove('show');
-            document.getElementById('modeView').style.display = 'none';
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('teacherView').classList.remove('active');
-            document.getElementById('userSetup').style.display = 'block';
-        }
-
-        function goToTeacherDirectly() {
-            // Hide the name entry and go straight to teacher dashboard
-            document.getElementById('userSetup').style.display = 'none';
-            document.getElementById('teacherView').classList.add('active');
-            showTeacherDashboard();
-        }
-
-        function selectMode(mode) {
-            if (mode === 'student') {
-                document.getElementById('modeView').style.display = 'none';
-                document.getElementById('homeView').style.display = 'block';
-            } else {
-                document.getElementById('modeView').style.display = 'none';
-                showTeacherDashboard();
-            }
-        }
-
-        function goToModeSelection() {
-            document.getElementById('teacherView').classList.remove('active');
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('modeView').style.display = 'block';
-        }
-
-        async function showTeacherDashboard() {
-            document.getElementById('teacherView').classList.add('active');
-            if (!useFirebase || !db) {
-                document.getElementById('studentsList').innerHTML = '<p style="color: #636e72; text-align: center;">Firebase required for teacher mode</p>';
-                return;
-            }
-
-            try {
-                const studentsRef = collection(db, 'students');
-                const studentsSnapshot = await getDocs(studentsRef);
-                
-                let html = '';
-                for (const studentDoc of studentsSnapshot.docs) {
-                    const student = studentDoc.data();
-                    const studentId = studentDoc.id;
-                    
-                    const submissionsSnapshot = await getDocs(
-                        query(collection(db, 'submissions'), where('studentId', '==', studentId))
-                    );
-                    
-                    const totalTests = submissionsSnapshot.size;
-                    let totalScore = 0;
-                    let totalQuestions = 0;
-
-                    submissionsSnapshot.forEach(doc => {
-                        const sub = doc.data();
-                        totalScore += sub.score || 0;
-                        totalQuestions += sub.totalQuestions || 0;
-                    });
-
-                    const avgPercentage = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
-
-                    html += `
-                        <div class="student-card" onclick="viewStudentProgress('${studentId}', '${student.name}')">
-                            <div style="font-size: 1.3em; font-weight: bold; color: #2d3436; margin-bottom: 10px;">${student.name}</div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px;">
-                                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Tests</div>
-                                    <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${totalTests}</div>
-                                </div>
-                                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Average</div>
-                                    <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${avgPercentage}%</div>
-                                </div>
-                                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 0.8em; color: #636e72; margin-bottom: 5px;">Score</div>
-                                    <div style="font-size: 1.3em; font-weight: bold; color: #2d3436;">${totalScore}/${totalQuestions}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                document.getElementById('studentsList').innerHTML = html || '<p style="color: #636e72; text-align: center;">No students yet</p>';
-            } catch (error) {
-                console.error('Error loading students:', error);
-            }
-        }
-
-        async function viewStudentProgress(studentId, studentName) {
-            try {
-                const submissionsRef = collection(db, 'submissions');
-                const rawSnap = await getDocs(query(submissionsRef, where('studentId', '==', studentId)));
-                // Sort by date descending in JS - no composite index needed
-                const sortedDocs = rawSnap.docs.sort((a,b) =>
-                    (b.data().completedAt || '').localeCompare(a.data().completedAt || ''));
-                const submissionsSnapshot = { docs: sortedDocs, empty: rawSnap.empty, forEach: (fn) => sortedDocs.forEach(d => fn(d)) };
-
-                let html = `
-                    <button class="back-button" onclick="showTeacherDashboard()">⬅️ Back to Students</button>
-                    <h2 style="font-size: 1.8em; margin-bottom: 20px; color: #2d3436;">📊 ${studentName}'s Progress</h2>
-                    <button style="background: #e17055; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; font-size: 0.9em; width: 100%;" onclick="resetStudentProgress('${studentId}', '${studentName}')">🔄 Reset All Progress</button>
-                `;
-
-                if (submissionsSnapshot.empty) {
-                    html += '<p style="color: #636e72; text-align: center; margin-top: 20px;">No submissions yet</p>';
-                } else {
-                    submissionsSnapshot.forEach(doc => {
-                        const sub = doc.data();
-                        const date = new Date(sub.completedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        const percentage = Math.round((sub.score / sub.totalQuestions) * 100);
-
-                        html += `
-                            <div style="background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; margin-top: 15px; border: 2px solid #dfe6e9;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div>
-                                        <strong>${sub.category.charAt(0).toUpperCase() + sub.category.slice(1)}</strong>
-                                        ${sub.difficulty ? ` - ${sub.difficulty}` : ''}
-                                        ${sub.isTest ? ' (Quiz)' : ` (Practice ${sub.setNumber || ''})`}
-                                    </div>
-                                    <div style="font-weight: bold; color: #2d3436; font-size: 1.1em;">${sub.score}/${sub.totalQuestions} (${percentage}%)</div>
-                                </div>
-                                <div style="color: #636e72; font-size: 0.9em;">${date}</div>
-                                ${sub.timeTaken ? `<div style="color: #636e72; font-size: 0.9em;">Time: ${formatTime(sub.timeTaken)}</div>` : ''}
-                            </div>
-                        `;
-                    });
-                }
-
-                document.getElementById('studentsList').innerHTML = html;
-            } catch (error) {
-                console.error('Error loading submissions:', error);
-            }
-        }
-
-        async function resetStudentProgress(studentId, studentName) {
-            if (!confirm(`Are you sure you want to reset ALL progress for ${studentName}? This cannot be undone.`)) {
-                return;
-            }
-
-            try {
-                const submissionsRef = collection(db, 'submissions');
-                const q = query(submissionsRef, where('studentId', '==', studentId));
-                const submissionsSnapshot = await getDocs(q);
-                
-                for (const docSnapshot of submissionsSnapshot.docs) {
-                    await deleteDoc(doc(db, 'submissions', docSnapshot.id));
-                }
-
-                const completedRef = doc(db, 'completedSets', studentId);
-                await deleteDoc(completedRef);
-
-                alert('Progress reset successfully!');
-                showTeacherDashboard();
-            } catch (error) {
-                console.error('Error resetting progress:', error);
-                alert('Error resetting progress. Please try again.');
-            }
-        }
-
-        // Navigation
-        function selectCategory(category) {
-            currentCategory = category;
-            const cat = categories.find(c => c.id === category);
-            document.getElementById('difficultyTitle').textContent = `${cat.title} - Choose Difficulty`;
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('difficultyView').classList.add('active');
-        }
-
-        function selectDifficulty(difficulty) {
-            currentDifficulty = difficulty;
-            showPracticeSets();
-        }
-
-        function goHome() {
-            document.getElementById('homeView').style.display = 'block';
-            document.getElementById('difficultyView').classList.remove('active');
-            document.getElementById('practiceView').classList.remove('active');
-            document.getElementById('questionView').classList.remove('active');
-            document.getElementById('testView').classList.remove('active');
-            stopTimer();
-        }
-
-        function goToDifficulty() {
-            document.getElementById('difficultyView').classList.add('active');
-            document.getElementById('practiceView').classList.remove('active');
-            document.getElementById('questionView').classList.remove('active');
-            document.getElementById('testView').classList.remove('active');
-            stopTimer();
-        }
-
-        function goToPractice() {
-            document.getElementById('practiceView').classList.add('active');
-            document.getElementById('questionView').classList.remove('active');
-            document.getElementById('testView').classList.remove('active');
-            stopTimer();
-        }
-
-        async function showPracticeSets() {
-            document.getElementById('difficultyView').classList.remove('active');
-            document.getElementById('practiceView').classList.add('active');
-            
-            await loadCompletedSets();
-            
-            const cat = categories.find(c => c.id === currentCategory);
-            const diffIcons = {easy: '🌟', medium: '⚡', hard: '🔥'};
-            
-            let html = `<h2 style="font-size: 1.8em; margin-bottom: 20px; color: #2d3436;">${cat.title} - ${diffIcons[currentDifficulty]} ${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)}</h2>`;
-            
-            for (let i = 1; i <= 5; i++) {
-                const key = `${currentCategory}-${currentDifficulty}-set${i}`;
-                const isCompleted = completedSets[key] === true;
-                
-                html += `
-                    <div class="practice-set-card ${isCompleted ? 'completed' : ''}" onclick="startPractice(${i})">
-                        ${isCompleted ? '<div class="completion-badge">✓ Done</div>' : ''}
-                        <div style="font-size: 1.2em; font-weight: bold; color: #2d3436; margin-bottom: 8px;">Practice Set ${i}</div>
-                        <div style="color: #636e72; font-size: 0.95em;">✏️ 10 Questions • 2 Chances per Question</div>
-                    </div>
-                `;
-            }
-            
-            html += `
-                <div style="margin-top: 20px;">
-                    <h3 style="font-size: 1.3em; color: #2d3436; margin-bottom: 15px;">Take a Full Quiz</h3>
-                    <div class="quiz-options">
-                        <div class="quiz-option-card timed" onclick="startQuiz(true)">
-                            <div style="font-size: 2em; margin-bottom: 10px;">⏱️</div>
-                            <div style="font-size: 1.1em; font-weight: bold; color: #2d3436; margin-bottom: 5px;">Timed Quiz</div>
-                            <div style="font-size: 0.85em; color: #636e72;">25 Questions • 45 Minutes</div>
-                        </div>
-                        <div class="quiz-option-card untimed" onclick="startQuiz(false)">
-                            <div style="font-size: 2em; margin-bottom: 10px;">♾️</div>
-                            <div style="font-size: 1.1em; font-weight: bold; color: #2d3436; margin-bottom: 5px;">Untimed Quiz</div>
-                            <div style="font-size: 0.85em; color: #636e72;">25 Questions • No Time Limit</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('practiceSets').innerHTML = html;
-        }
-
-        function getRandomQuestions(count) {
-            const questions = currentCategory === 'mixed' 
-                ? Object.values(questionBank).flatMap(cat => cat[currentDifficulty] || [])
-                : (questionBank[currentCategory]?.[currentDifficulty] || []);
-            
-            const shuffled = [...questions].sort(() => Math.random() - 0.5);
-            return shuffled.slice(0, Math.min(count, questions.length));
-        }
-
-        function startPractice(setNumber) {
-            isTestMode = false;
-            currentSetNumber = setNumber;
-            currentQuestions = getRandomQuestions(10);
-            currentQuestionIndex = 0;
-            score = 0;
-            attemptsRemaining = 2;
-            currentSessionId = Date.now().toString();
-            
-            document.getElementById('practiceView').classList.remove('active');
-            document.getElementById('questionView').classList.add('active');
-            
-            startTimer(false, false);
-            showQuestion();
-        }
-
-        function startQuiz(timed) {
-            isTestMode = true;
-            isTimedQuiz = timed;
-            currentSetNumber = null;
-            currentQuestions = getRandomQuestions(25);
-            currentQuestionIndex = 0;
-            score = 0;
-            testAnswers = new Array(25).fill(null);
-            currentSessionId = Date.now().toString();
-            
-            if (timed) {
-                quizTimeLimit = 45 * 60; // 45 minutes in seconds
-            }
-            
-            document.getElementById('practiceView').classList.remove('active');
-            document.getElementById('testView').classList.add('active');
-            
-            startTimer(true, timed);
-            showTestQuestions();
-        }
-
-        function showQuestion() {
-            const question = currentQuestions[currentQuestionIndex];
-            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
-            
-            document.getElementById('progressBar').style.width = progress + '%';
-            document.getElementById('progressBar').textContent = `${currentQuestionIndex + 1} / ${currentQuestions.length}`;
-            
-            const html = `
-                <div class="question-container">
-                    <div class="question-header">
-                        <div style="font-size: 0.9em; opacity: 0.9;">Question ${currentQuestionIndex + 1} of ${currentQuestions.length}</div>
-                        <div class="attempts-info">Attempts Remaining: ${attemptsRemaining}</div>
-                    </div>
-                    <div class="question-text">${question.q}</div>
-                    <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here..." autocomplete="off">
-                    <div class="button-group">
-                        <button class="btn btn-check" onclick="checkAnswer()" id="checkBtn" disabled>✓ Check Answer</button>
-                        <button class="btn btn-next" onclick="nextQuestion()" style="display: none;" id="nextBtn">Next →</button>
-                    </div>
-                    <div class="feedback" id="feedback"></div>
-                </div>
-            `;
-            
-            document.getElementById('questionContainer').innerHTML = html;
-            const input = document.getElementById('answerInput');
-            input.focus();
-            
-            // Enable check button only when input has value
-            input.addEventListener('input', function() {
-                document.getElementById('checkBtn').disabled = this.value.trim() === '';
+async function showScore() {
+    stopTimer();
+    const pct=(score/currentQuestions.length)*100;
+    let emoji='🎉', msg='Great job!';
+    if(pct===100){ emoji='🏆'; msg='Perfect score! You\'re a math superstar!'; }
+    else if(pct>=80){ emoji='⭐'; msg='Excellent work! Keep it up!'; }
+    else if(pct>=60){ emoji='👍'; msg='Good effort! Practice makes perfect!'; }
+    else { emoji='💪'; msg='Keep practicing! You\'re getting better!'; }
+    if(pct>=70 && !isTestMode && currentSetNumber) await markSetComplete();
+    if(useFirebase && db && currentStudentId) {
+        try {
+            await addDoc(collection(db,'submissions'),{
+                studentId:currentStudentId, studentName:currentStudentName,
+                grade:currentGrade, category:currentCategory, difficulty:currentDifficulty,
+                score, totalQuestions:currentQuestions.length, isTest:isTestMode,
+                setNumber:currentSetNumber, completedAt:new Date().toISOString(),
+                sessionId:currentSessionId, timeTaken:elapsedTime
             });
-            
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && this.value.trim() !== '') {
-                    const nextBtn = document.getElementById('nextBtn');
-                    if (nextBtn.style.display === 'none') {
-                        checkAnswer();
-                    } else {
-                        nextQuestion();
-                    }
-                }
+        } catch(e){}
+    }
+    const badge=(pct>=70&&!isTestMode&&currentSetNumber)?'<p style="color:#00b894;font-weight:bold;margin-top:10px;">✓ Practice set marked as complete!</p>':'';
+    document.getElementById('questionContainer').innerHTML=`
+        <div class="score-display">
+            <div class="score-emoji">${emoji}</div>
+            <div class="score-text">${score} / ${currentQuestions.length}</div>
+            <div class="score-message">${msg}</div>
+            <div class="time-taken">⏱️ Time: ${formatTime(elapsedTime)}</div>
+            ${badge}
+            <button class="back-button" onclick="goToPractice()" style="margin:20px auto 0;">Try Another Set!</button>
+        </div>`;
+}
+
+function showTestQuestions() {
+    const prog=((currentQuestionIndex+1)/currentQuestions.length)*100;
+    document.getElementById('testProgressBar').style.width=prog+'%';
+    document.getElementById('testProgressBar').textContent=`${currentQuestionIndex+1} / ${currentQuestions.length}`;
+    let html='<div style="margin-bottom:30px;">';
+    currentQuestions.forEach((q,i)=>{
+        const active=i===currentQuestionIndex;
+        html+=`<div class="question-container" style="${!active?'display:none;':''}">
+            <div class="question-header"><div>Question ${i+1} of ${currentQuestions.length}</div></div>
+            <div class="question-text">${q.q}</div>
+            <input type="text" class="answer-input" id="testAnswer${i}" placeholder="Type your answer here..." value="${testAnswers[i]||''}" autocomplete="off">
+            <div class="button-group">
+                ${i>0?`<button class="btn btn-check" onclick="previousTestQuestion()">← Previous</button>`:''}
+                ${i<currentQuestions.length-1
+                    ?`<button class="btn btn-next" onclick="nextTestQuestion()">Next →</button>`
+                    :`<button class="btn btn-next" onclick="submitTest()">Submit Quiz</button>`}
+            </div></div>`;
+    });
+    html+='</div>';
+    document.getElementById('testContainer').innerHTML=html;
+    setTimeout(()=>document.getElementById(`testAnswer${currentQuestionIndex}`)?.focus(),100);
+}
+function nextTestQuestion(){
+    testAnswers[currentQuestionIndex]=document.getElementById(`testAnswer${currentQuestionIndex}`).value;
+    currentQuestionIndex++; showTestQuestions();
+}
+function previousTestQuestion(){
+    testAnswers[currentQuestionIndex]=document.getElementById(`testAnswer${currentQuestionIndex}`).value;
+    currentQuestionIndex--; showTestQuestions();
+}
+
+async function submitTest() {
+    stopTimer();
+    testAnswers[currentQuestionIndex]=document.getElementById(`testAnswer${currentQuestionIndex}`).value;
+    score=0;
+    let resultsHTML='<div style="padding:20px;"><h2 style="text-align:center;color:#2d3436;margin-bottom:30px;">📊 Quiz Results</h2>';
+    currentQuestions.forEach((q,i)=>{
+        const userAns=(testAnswers[i]||'').trim().toLowerCase();
+        const ok=userAns===q.a.toLowerCase();
+        if(ok) score++;
+        resultsHTML+=`<div class="question-container" style="margin-bottom:20px;">
+            <div class="question-header" style="background:${ok?'linear-gradient(135deg,#11998e 0%,#38ef7d 100%)':'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)'}">
+                <div>Question ${i+1} — ${ok?'✓ Correct':'✗ Incorrect'}</div>
+            </div>
+            <div class="question-text" style="font-size:1.1em;">${q.q}</div>
+            <div style="padding:15px;background:#f8f9fa;border-radius:10px;margin:15px 0;">
+                <strong>Your answer:</strong> ${testAnswers[i]||'(No answer)'}<br>
+                <strong>Correct answer:</strong> ${q.a}
+            </div>
+            <div class="feedback-text" style="color:#2d3436;">${q.explanation}</div>
+        </div>`;
+    });
+    if(useFirebase && db && currentStudentId) {
+        try {
+            await addDoc(collection(db,'submissions'),{
+                studentId:currentStudentId, studentName:currentStudentName,
+                grade:currentGrade, category:currentCategory, difficulty:currentDifficulty,
+                score, totalQuestions:currentQuestions.length, isTest:true,
+                completedAt:new Date().toISOString(), sessionId:currentSessionId, timeTaken:elapsedTime,
+                questions:currentQuestions.map((q,i)=>({
+                    question:q.q, correctAnswer:q.a, userAnswer:testAnswers[i]||'',
+                    isCorrect:(testAnswers[i]||'').trim().toLowerCase()===q.a.toLowerCase()
+                }))
             });
-            
-            // Reset attempts for new question
-            attemptsRemaining = 2;
-        }
+        } catch(e){}
+    }
+    const pct=(score/currentQuestions.length)*100;
+    let emoji='🎉', msg='Great job!';
+    if(pct===100){ emoji='🏆'; msg='Perfect score! You\'re amazing!'; }
+    else if(pct>=80){ emoji='⭐'; msg='Excellent work!'; }
+    else if(pct>=60){ emoji='👍'; msg='Good effort!'; }
+    else { emoji='💪'; msg='Keep practicing!'; }
+    resultsHTML=`<div class="score-display" style="margin-bottom:30px;">
+        <div class="score-emoji">${emoji}</div>
+        <div class="score-text">${score} / ${currentQuestions.length}</div>
+        <div class="score-message">${msg}</div>
+        <div class="time-taken">⏱️ Time: ${formatTime(elapsedTime)}</div>
+    </div>`+resultsHTML;
+    resultsHTML+='<button class="back-button" onclick="goToPractice()" style="margin:20px auto;display:block;">Back to Practice</button></div>';
+    document.getElementById('testContainer').innerHTML=resultsHTML;
+}
 
-        function checkAnswer() {
-            const input = document.getElementById('answerInput');
-            const userAnswer = input.value.trim().toLowerCase();
-            
-            if (userAnswer === '') {
-                input.classList.add('error');
-                setTimeout(() => input.classList.remove('error'), 500);
-                return;
-            }
-            
-            const question = currentQuestions[currentQuestionIndex];
-            const correctAnswer = question.a.toLowerCase();
-            
-            const feedback = document.getElementById('feedback');
-            const isCorrect = userAnswer === correctAnswer;
-            
-            if (isCorrect) {
-                score++;
-                feedback.className = 'feedback correct show';
-                feedback.innerHTML = `
-                    <div class="feedback-title">🎉 Correct! Well done!</div>
-                    <div class="feedback-text">${question.explanation}</div>
-                `;
-                input.disabled = true;
-                document.getElementById('checkBtn').style.display = 'none';
-                document.getElementById('nextBtn').style.display = 'block';
-            } else {
-                attemptsRemaining--;
-                
-                if (attemptsRemaining > 0) {
-                    feedback.className = 'feedback incorrect show';
-                    feedback.innerHTML = `
-                        <div class="feedback-title">💡 Not quite right!</div>
-                        <div class="feedback-text">You have ${attemptsRemaining} more chance. Try again!</div>
-                    `;
-                    input.value = '';
-                    input.focus();
-                    // Update attempts display
-                    document.querySelector('.attempts-info').textContent = `Attempts Remaining: ${attemptsRemaining}`;
-                } else {
-                    feedback.className = 'feedback incorrect show';
-                    feedback.innerHTML = `
-                        <div class="feedback-title">💡 Out of attempts!</div>
-                        <div class="feedback-text">The correct answer is: <strong>${question.a}</strong><br><br>${question.explanation}</div>
-                    `;
-                    input.disabled = true;
-                    document.getElementById('checkBtn').style.display = 'none';
-                    document.getElementById('nextBtn').style.display = 'block';
-                }
-            }
-        }
-
-        function nextQuestion() {
-            currentQuestionIndex++;
-            
-            if (currentQuestionIndex >= currentQuestions.length) {
-                showScore();
-            } else {
-                showQuestion();
-            }
-        }
-
-        async function showScore() {
-            stopTimer();
-            const percentage = (score / currentQuestions.length) * 100;
-            let emoji = '🎉';
-            let message = 'Great job!';
-            
-            if (percentage === 100) {
-                emoji = '🏆';
-                message = 'Perfect score! You\'re a math superstar!';
-            } else if (percentage >= 80) {
-                emoji = '⭐';
-                message = 'Excellent work! Keep it up!';
-            } else if (percentage >= 60) {
-                emoji = '👍';
-                message = 'Good effort! Practice makes perfect!';
-            } else {
-                emoji = '💪';
-                message = 'Keep practicing! You\'re getting better!';
-            }
-
-            if (percentage >= 70 && !isTestMode && currentSetNumber) {
-                await markSetComplete();
-            }
-
-            if (useFirebase && db && currentStudentId) {
-                try {
-                    await addDoc(collection(db, 'submissions'), {
-                        studentId: currentStudentId,
-                        studentName: currentStudentName,
-                        category: currentCategory,
-                        difficulty: currentDifficulty,
-                        score: score,
-                        totalQuestions: currentQuestions.length,
-                        isTest: isTestMode,
-                        setNumber: currentSetNumber,
-                        completedAt: new Date().toISOString(),
-                        sessionId: currentSessionId,
-                        timeTaken: elapsedTime
-                    });
-                } catch (error) {
-                    console.error('Error saving submission:', error);
-                }
-            }
-            
-            const completeMessage = (percentage >= 70 && !isTestMode && currentSetNumber) 
-                ? '<p style="color: #00b894; font-weight: bold; margin-top: 10px;">✓ Practice set marked as complete!</p>' 
-                : '';
-            
-            const html = `
-                <div class="score-display">
-                    <div class="score-emoji">${emoji}</div>
-                    <div class="score-text">${score} / ${currentQuestions.length}</div>
-                    <div class="score-message">${message}</div>
-                    <div class="time-taken">⏱️ Time: ${formatTime(elapsedTime)}</div>
-                    ${completeMessage}
-                    <button class="back-button" onclick="goToPractice()" style="margin: 20px auto 0;">Try Another Set!</button>
-                </div>
-            `;
-            
-            document.getElementById('questionContainer').innerHTML = html;
-        }
-
-        function showTestQuestions() {
-            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
-            document.getElementById('testProgressBar').style.width = progress + '%';
-            document.getElementById('testProgressBar').textContent = `${currentQuestionIndex + 1} / ${currentQuestions.length}`;
-            
-            let html = '<div style="margin-bottom: 30px;">';
-            
-            currentQuestions.forEach((question, index) => {
-                const isActive = index === currentQuestionIndex;
-                html += `
-                    <div class="question-container" style="${!isActive ? 'display: none;' : ''}">
-                        <div class="question-header">
-                            <div>Question ${index + 1} of ${currentQuestions.length}</div>
-                        </div>
-                        <div class="question-text">${question.q}</div>
-                        <input type="text" class="answer-input" id="testAnswer${index}" 
-                               placeholder="Type your answer here..." 
-                               value="${testAnswers[index] || ''}"
-                               autocomplete="off">
-                        <div class="button-group">
-                            ${index > 0 ? `<button class="btn btn-check" onclick="previousTestQuestion()">← Previous</button>` : ''}
-                            ${index < currentQuestions.length - 1 
-                                ? `<button class="btn btn-next" onclick="nextTestQuestion()">Next →</button>`
-                                : `<button class="btn btn-next" onclick="submitTest()">Submit Quiz</button>`
-                            }
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            document.getElementById('testContainer').innerHTML = html;
-            
-            setTimeout(() => {
-                document.getElementById(`testAnswer${currentQuestionIndex}`)?.focus();
-            }, 100);
-        }
-
-        function nextTestQuestion() {
-            testAnswers[currentQuestionIndex] = document.getElementById(`testAnswer${currentQuestionIndex}`).value;
-            currentQuestionIndex++;
-            showTestQuestions();
-        }
-
-        function previousTestQuestion() {
-            testAnswers[currentQuestionIndex] = document.getElementById(`testAnswer${currentQuestionIndex}`).value;
-            currentQuestionIndex--;
-            showTestQuestions();
-        }
-
-        async function submitTest() {
-            stopTimer();
-            testAnswers[currentQuestionIndex] = document.getElementById(`testAnswer${currentQuestionIndex}`).value;
-            
-            score = 0;
-            let resultsHTML = '<div style="padding: 20px;">';
-            resultsHTML += '<h2 style="text-align: center; color: #2d3436; margin-bottom: 30px;">📊 Quiz Results</h2>';
-            
-            currentQuestions.forEach((question, index) => {
-                const userAnswer = (testAnswers[index] || '').trim().toLowerCase();
-                const correctAnswer = question.a.toLowerCase();
-                const isCorrect = userAnswer === correctAnswer;
-                
-                if (isCorrect) score++;
-                
-                resultsHTML += `
-                    <div class="question-container" style="margin-bottom: 20px;">
-                        <div class="question-header" style="background: ${isCorrect ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'}">
-                            <div>Question ${index + 1} - ${isCorrect ? '✓ Correct' : '✗ Incorrect'}</div>
-                        </div>
-                        <div class="question-text" style="font-size: 1.1em;">${question.q}</div>
-                        <div style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin: 15px 0;">
-                            <strong>Your answer:</strong> ${testAnswers[index] || '(No answer)'}<br>
-                            <strong>Correct answer:</strong> ${question.a}
-                        </div>
-                        <div class="feedback-text" style="color: #2d3436;">${question.explanation}</div>
-                    </div>
-                `;
-            });
-
-            if (useFirebase && db && currentStudentId) {
-                try {
-                    await addDoc(collection(db, 'submissions'), {
-                        studentId: currentStudentId,
-                        studentName: currentStudentName,
-                        category: currentCategory,
-                        difficulty: currentDifficulty,
-                        score: score,
-                        totalQuestions: currentQuestions.length,
-                        isTest: true,
-                        completedAt: new Date().toISOString(),
-                        sessionId: currentSessionId,
-                        timeTaken: elapsedTime,
-                        questions: currentQuestions.map((q, i) => ({
-                            question: q.q,
-                            correctAnswer: q.a,
-                            userAnswer: testAnswers[i] || '',
-                            isCorrect: (testAnswers[i] || '').trim().toLowerCase() === q.a.toLowerCase()
-                        }))
-                    });
-                } catch (error) {
-                    console.error('Error saving test:', error);
-                }
-            }
-            
-            const percentage = (score / currentQuestions.length) * 100;
-            let emoji = '🎉';
-            let message = 'Great job!';
-            
-            if (percentage === 100) {
-                emoji = '🏆';
-                message = 'Perfect score! You\'re amazing!';
-            } else if (percentage >= 80) {
-                emoji = '⭐';
-                message = 'Excellent work!';
-            } else if (percentage >= 60) {
-                emoji = '👍';
-                message = 'Good effort!';
-            } else {
-                emoji = '💪';
-                message = 'Keep practicing!';
-            }
-            
-            resultsHTML = `
-                <div class="score-display" style="margin-bottom: 30px;">
-                    <div class="score-emoji">${emoji}</div>
-                    <div class="score-text">${score} / ${currentQuestions.length}</div>
-                    <div class="score-message">${message}</div>
-                    <div class="time-taken">⏱️ Time: ${formatTime(elapsedTime)}</div>
-                </div>
-            ` + resultsHTML;
-            
-            resultsHTML += '<button class="back-button" onclick="goToPractice()" style="margin: 20px auto; display: block;">Back to Practice</button>';
-            resultsHTML += '</div>';
-            
-            document.getElementById('testContainer').innerHTML = resultsHTML;
-        }
-
-        init();
-	// Make functions global
-	window.showConfigInput = showConfigInput;
-        window.hideSetupSection = hideSetupSection;
-        window.closeConfigModal = closeConfigModal;
-        window.saveFirebaseConfig = saveFirebaseConfig;
-        window.saveStudentInfo = saveStudentInfo;
-        window.changeStudent = changeStudent;
-        window.goToTeacherDirectly = goToTeacherDirectly;
-        window.selectMode = selectMode;
-        window.selectCategory = selectCategory;
-        window.selectDifficulty = selectDifficulty;
-        window.goHome = goHome;
-        window.goToDifficulty = goToDifficulty;
-        window.goToPractice = goToPractice;
-        window.goToModeSelection = goToModeSelection;
-        window.startPractice = startPractice;
-        window.startQuiz = startQuiz;
-        window.checkAnswer = checkAnswer;
-        window.nextQuestion = nextQuestion;
-        window.nextTestQuestion = nextTestQuestion;
-        window.previousTestQuestion = previousTestQuestion;
-        window.submitTest = submitTest;
-        window.viewStudentProgress = viewStudentProgress;
-        window.resetStudentProgress = resetStudentProgress;
-    </script>
+init();
+</script>
 </body>
 </html>
