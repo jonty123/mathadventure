@@ -104,6 +104,34 @@
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; padding:15px; overflow-y:auto; }
         .modal.active { display:flex; }
         .modal-content { background:white; border-radius:20px; padding:25px 20px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; margin:auto; }
+        /* ── Subject Selector ── */
+        .subject-selector-section { background:#f8f0ff; border:2px solid #a29bfe; border-radius:16px; padding:20px; margin-bottom:20px; }
+        .subject-selector-section h3 { color:#4834d4; margin-bottom:15px; font-size:1.15em; text-align:center; }
+        .subjects-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+        .subject-card { border-radius:16px; padding:22px 10px; text-align:center; cursor:pointer; border:3px solid transparent; transition:all 0.2s; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+        .subject-card:hover { transform:scale(1.04); box-shadow:0 6px 18px rgba(0,0,0,0.18); }
+        .subject-card:active { transform:scale(0.97); }
+        .subject-card.selected { border-color:#2d3436; box-shadow:0 6px 20px rgba(0,0,0,0.28); transform:scale(1.04); }
+        .subject-card .subject-emoji { font-size:2.4em; display:block; margin-bottom:6px; }
+        .subject-card .subject-label { font-size:1em; font-weight:bold; color:#2d3436; }
+
+        /* ── Reading Comprehension View ── */
+        .rc-view { display:none; }
+        .rc-view.active { display:block; }
+        .passage-panel { background:#fffde7; border:2px solid #f9ca24; border-radius:16px; padding:20px; margin-bottom:24px; max-height:280px; overflow-y:auto; line-height:1.8; }
+        .passage-title { font-size:1.25em; font-weight:bold; color:#2d3436; margin-bottom:12px; text-align:center; }
+        .passage-text { font-size:0.97em; color:#2d3436; line-height:1.85; }
+        .rc-questions-list { display:flex; flex-direction:column; gap:16px; margin-bottom:20px; }
+        .rc-question-item { background:white; border-radius:14px; padding:18px; box-shadow:0 3px 10px rgba(0,0,0,0.08); border:2px solid #dfe6e9; }
+        .rc-question-num { font-size:0.8em; color:#636e72; margin-bottom:6px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; }
+        .rc-question-text { font-size:1.08em; color:#2d3436; margin-bottom:10px; line-height:1.5; }
+        .rc-answer-input { width:100%; padding:12px; font-size:1em; border:2px solid #dfe6e9; border-radius:10px; font-family:inherit; }
+        .rc-answer-input:focus { outline:none; border-color:#6c5ce7; }
+        .rc-result-correct { border-color:#00b894; background:linear-gradient(135deg,#d4fc79 0%,#96e6a1 100%); }
+        .rc-result-incorrect { border-color:#e17055; background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%); }
+        .rc-result-answer { font-size:0.92em; margin-top:8px; color:#2d3436; line-height:1.5; }
+        .rc-explanation { font-size:0.88em; color:#555; margin-top:5px; line-height:1.5; font-style:italic; }
+
         @media(max-width:500px){
             .categories-grid { grid-template-columns:1fr; }
             .header h1 { font-size:1.6em; }
@@ -140,6 +168,12 @@
             <h3>👋 Welcome back, <span id="displayName"></span>!</h3>
             <p>Your progress is being saved.</p>
             <button class="back-button" onclick="changeStudent()" style="margin-top:10px;">Switch Student</button>
+        </div>
+
+        <!-- Subject Selector -->
+        <div class="subject-selector-section" id="subjectSelectorSection" style="display:none;">
+            <h3>🎓 What do you want to learn today?</h3>
+            <div class="subjects-grid" id="subjectsGrid"></div>
         </div>
 
         <!-- Grade Selector -->
@@ -204,6 +238,12 @@
             <h2 style="font-size:1.8em; margin-bottom:20px; color:#2d3436;">👨‍🏫 Teacher Dashboard</h2>
             <div id="studentsList"></div>
         </div>
+
+        <!-- Reading Comprehension View -->
+        <div id="rcView" class="rc-view">
+            <button class="back-button" onclick="goToModeSelection()">⬅️ Back</button>
+            <div id="rcContent"></div>
+        </div>
     </div>
 </div>
 
@@ -261,6 +301,7 @@ let db = null, useFirebase = false;
 let currentStudentId = null, currentStudentName = null;
 let completedSets = {};
 let currentGrade = null;
+let selectedSubject = 'math';
 let currentCategory = '', currentDifficulty = '';
 let currentQuestions = [], currentQuestionIndex = 0;
 let score = 0, isTestMode = false, testAnswers = [];
@@ -292,6 +333,9 @@ window.viewStudentProgress = viewStudentProgress;
 window.resetStudentProgress = resetStudentProgress;
 window.closeConfigModal = closeConfigModal;
 window.saveFirebaseConfig = saveFirebaseConfig;
+window.selectSubject = selectSubject;
+window.startRCSession = startRCSession;
+window.submitRCAnswers = submitRCAnswers;
 
 // ── Timer ──
 function startTimer(isQuiz, isTimed) {
@@ -320,6 +364,7 @@ function formatTime(sec){ const m=Math.floor(sec/60),s=sec%60; return `${m}:${St
 
 // ── Init ──
 async function init() {
+    renderSubjectSelector();
     renderGradeSelector();
     // Attempt to decrypt config with the built-in passphrase
     const config = decryptConfig(ENCRYPTED_CONFIG, 'MathAdventure2024SecretKey!');
@@ -340,6 +385,134 @@ function renderGradeSelector() {
             <div class="grade-desc">${info.description}</div>
         </div>
     `).join('');
+}
+
+const SUBJECTS = [
+    { key: 'math',                  emoji: '📐', label: 'Math',       bg: 'linear-gradient(135deg,#a29bfe 0%,#6c5ce7 100%)' },
+    { key: 'science',               emoji: '🔬', label: 'Science',    bg: 'linear-gradient(135deg,#74b9ff 0%,#0984e3 100%)' },
+    { key: 'english',               emoji: '📖', label: 'English',    bg: 'linear-gradient(135deg,#55efc4 0%,#00b894 100%)' },
+    { key: 'history',               emoji: '🌍', label: 'History',    bg: 'linear-gradient(135deg,#ffeaa7 0%,#e17055 100%)' },
+    { key: 'geography',             emoji: '🗺️',  label: 'Geography',  bg: 'linear-gradient(135deg,#81ecec 0%,#00cec9 100%)' },
+    { key: 'reading-comprehension', emoji: '📚', label: 'Reading',    bg: 'linear-gradient(135deg,#fd79a8 0%,#e84393 100%)' },
+];
+
+function renderSubjectSelector() {
+    const grid = document.getElementById('subjectsGrid');
+    grid.innerHTML = SUBJECTS.map(s => `
+        <div class="subject-card" id="subject-card-${s.key}" style="background:${s.bg}" onclick="selectSubject('${s.key}')">
+            <span class="subject-emoji">${s.emoji}</span>
+            <div class="subject-label">${s.label}</div>
+        </div>
+    `).join('');
+}
+
+function selectSubject(key) {
+    selectedSubject = key;
+    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`subject-card-${key}`).classList.add('selected');
+    document.getElementById('gradeSelectorSection').style.display = 'block';
+    if (currentGrade) document.getElementById('modeView').style.display = 'block';
+}
+
+// ── Reading Comprehension ────────────────────────────────────────────────────
+async function startRCSession() {
+    const rcContent = document.getElementById('rcContent');
+    document.getElementById('rcView').classList.add('active');
+    rcContent.innerHTML = '<p style="text-align:center;color:#636e72;padding:40px 0;">Loading passage... 📖</p>';
+
+    if (!useFirebase || !db) {
+        rcContent.innerHTML = '<p style="text-align:center;color:#e17055;padding:20px;">Firebase connection required for Reading Comprehension.</p>';
+        return;
+    }
+    try {
+        const pSnap = await getDocs(query(collection(db, 'passages'), where('grade', '==', currentGrade)));
+        if (pSnap.empty) {
+            rcContent.innerHTML = '<p style="text-align:center;color:#636e72;padding:20px;">No passages available for this grade yet. Check back soon! 📖</p>';
+            return;
+        }
+        const pDocs = pSnap.docs;
+        const randomDoc = pDocs[Math.floor(Math.random() * pDocs.length)];
+        const pd = randomDoc.data();
+        const passageId = randomDoc.id;
+
+        const qSnap = await getDocs(query(collection(db, 'questions'), where('passage_id', '==', passageId)));
+        const rcQs = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (!rcQs.length) {
+            rcContent.innerHTML = '<p style="text-align:center;color:#636e72;padding:20px;">No questions found for this passage.</p>' +
+                '<button class="btn btn-next" onclick="startRCSession()" style="display:block;max-width:220px;margin:10px auto;">Try Another Passage</button>';
+            return;
+        }
+
+        let html = `<h2 style="font-size:1.5em;margin-bottom:16px;color:#2d3436;text-align:center;">📚 Reading Adventure</h2>
+            <div class="passage-panel">
+                <div class="passage-title">${pd.title}</div>
+                <div class="passage-text">${pd.text.replace(/\n/g, '<br>')}</div>
+            </div>
+            <div class="rc-questions-list">`;
+        rcQs.forEach((q, i) => {
+            html += `<div class="rc-question-item" id="rc-q-${i}">
+                <div class="rc-question-num">Question ${i + 1} &mdash; ${q.category}</div>
+                <div class="rc-question-text">${q.question_text}</div>
+                <input type="text" class="rc-answer-input" id="rc-ans-${i}" placeholder="Your answer..." autocomplete="off">
+            </div>`;
+        });
+        html += `</div>
+            <button class="btn btn-check" onclick="submitRCAnswers()" style="width:100%;margin-bottom:12px;">✓ Submit All Answers</button>
+            <button class="btn btn-next" onclick="startRCSession()" style="width:100%;margin-bottom:20px;">↺ New Passage</button>`;
+
+        window._rcQuestions = rcQs;
+        window._rcPassageId = passageId;
+        rcContent.innerHTML = html;
+    } catch(e) {
+        console.error(e);
+        rcContent.innerHTML = `<p style="text-align:center;color:#e17055;padding:20px;">Error loading passage: ${e.message}</p>`;
+    }
+}
+
+function submitRCAnswers() {
+    const qs = window._rcQuestions;
+    if (!qs || !qs.length) return;
+    const submitBtn = document.querySelector('#rcContent .btn-check');
+    if (submitBtn) submitBtn.disabled = true;
+
+    let score = 0;
+    qs.forEach((q, i) => {
+        const inp = document.getElementById(`rc-ans-${i}`);
+        const userAns = (inp?.value || '').trim().toLowerCase();
+        const isOk = userAns === String(q.correct_answer).toLowerCase();
+        if (isOk) score++;
+        const item = document.getElementById(`rc-q-${i}`);
+        if (!item) return;
+        item.classList.add(isOk ? 'rc-result-correct' : 'rc-result-incorrect');
+        if (inp) inp.disabled = true;
+        const fb = document.createElement('div');
+        fb.innerHTML = `<div class="rc-result-answer">${isOk ? '✅' : '❌'} <strong>Your answer:</strong> ${inp?.value || '(no answer)'}${!isOk ? `<br><strong>Correct answer:</strong> ${q.correct_answer}` : ''}</div>
+            <div class="rc-explanation">${q.explanation}</div>`;
+        item.appendChild(fb);
+    });
+
+    const pct = Math.round((score / qs.length) * 100);
+    let emoji = '💪', msg = 'Keep reading!';
+    if (pct >= 80) { emoji = '⭐'; msg = 'Excellent reading comprehension!'; }
+    else if (pct >= 60) { emoji = '👍'; msg = 'Good effort! Keep practicing!'; }
+    const scoreHtml = `<div class="score-display" style="margin-bottom:20px;">
+        <div class="score-emoji">${emoji}</div>
+        <div class="score-text">${score} / ${qs.length}</div>
+        <div class="score-message">${msg}</div>
+    </div>`;
+    if (submitBtn) submitBtn.outerHTML = scoreHtml;
+
+    if (useFirebase && db && currentStudentId) {
+        addDoc(collection(db, 'submissions'), {
+            studentId: currentStudentId, studentName: currentStudentName,
+            subject: 'reading-comprehension', grade: currentGrade,
+            category: 'reading-comprehension', difficulty: 'mixed',
+            score, totalQuestions: qs.length, isTest: false,
+            completedAt: new Date().toISOString(), sessionId: Date.now().toString(),
+            timeTaken: 0, passageId: window._rcPassageId
+        }).catch(() => {});
+    }
 }
 
 function selectGrade(gradeKey) {
@@ -397,8 +570,7 @@ async function checkStudentInfo() {
         }
         document.getElementById('displayName').textContent = currentStudentName;
         document.getElementById('userInfo').classList.add('show');
-        document.getElementById('gradeSelectorSection').style.display = 'block';
-        document.getElementById('modeView').style.display = savedGrade ? 'block' : 'none';
+        document.getElementById('subjectSelectorSection').style.display = 'block';
         await loadCompletedSets();
     } else {
         document.getElementById('userSetup').style.display = 'block';
@@ -444,19 +616,23 @@ async function saveStudentInfo() {
     document.getElementById('userSetup').style.display = 'none';
     document.getElementById('displayName').textContent = currentStudentName;
     document.getElementById('userInfo').classList.add('show');
-    document.getElementById('gradeSelectorSection').style.display = 'block';
+    document.getElementById('subjectSelectorSection').style.display = 'block';
 }
 
 function changeStudent() {
     ['mathapp-student-name','mathapp-student-id','mathapp-student-grade'].forEach(k=>localStorage.removeItem(k));
     currentStudentName=null; currentStudentId=null; currentGrade=null; completedSets={};
+    selectedSubject = 'math';
     document.getElementById('userInfo').classList.remove('show');
+    document.getElementById('subjectSelectorSection').style.display='none';
     document.getElementById('gradeSelectorSection').style.display='none';
     document.getElementById('modeView').style.display='none';
     document.getElementById('homeView').style.display='none';
     document.getElementById('teacherView').classList.remove('active');
+    document.getElementById('rcView').classList.remove('active');
     document.getElementById('userSetup').style.display='block';
     document.querySelectorAll('.grade-card').forEach(c=>c.classList.remove('selected'));
+    document.querySelectorAll('.subject-card').forEach(c=>c.classList.remove('selected'));
 }
 
 function goToTeacherDirectly() {
@@ -469,7 +645,11 @@ function selectMode(mode) {
     if(mode==='student') {
         localStorage.setItem('mathapp-student-grade', currentGrade);
         document.getElementById('modeView').style.display='none';
-        document.getElementById('homeView').style.display='block';
+        if (selectedSubject === 'reading-comprehension') {
+            startRCSession();
+        } else {
+            document.getElementById('homeView').style.display='block';
+        }
     } else {
         document.getElementById('modeView').style.display='none';
         showTeacherDashboard();
@@ -478,6 +658,7 @@ function selectMode(mode) {
 function goToModeSelection() {
     document.getElementById('teacherView').classList.remove('active');
     document.getElementById('homeView').style.display='none';
+    document.getElementById('rcView').classList.remove('active');
     document.getElementById('modeView').style.display='block';
 }
 
@@ -607,7 +788,7 @@ async function getQuestionsFromFirestore(count) {
     try {
         const q = query(
             collection(db, 'questions'),
-            where('subject', '==', 'math'),
+            where('subject', '==', selectedSubject),
             where('grade', '==', currentGrade),
             where('category', '==', currentCategory),
             where('difficulty', '==', currentDifficulty)
