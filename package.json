@@ -1,0 +1,16 @@
+{
+  "name": "mathadventure-tools",
+  "version": "1.0.0",
+  "description": "Server-side tooling for MathAdventure — question replenishment agent",
+  "type": "module",
+  "scripts": {
+    "replenish": "node replenish-questions.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "firebase-admin": "^12.0.0"
+  }
+}

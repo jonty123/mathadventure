@@ -1,0 +1,83 @@
+name: Replenish Question Bank
+
+on:
+  # Weekly cron — every Sunday at 03:00 UTC
+  schedule:
+    - cron: '0 3 * * 0'
+
+  # Manual trigger with optional overrides
+  workflow_dispatch:
+    inputs:
+      subject:
+        description: 'Subject (e.g. math)'
+        required: false
+        default: 'math'
+      grade:
+        description: 'Grade key (e.g. grade3)'
+        required: true
+      count:
+        description: 'Number of questions to generate'
+        required: false
+        default: '20'
+      dry_run:
+        description: 'Dry run — validate but do not insert'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  replenish:
+    name: Generate & Insert Questions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Only allow one replenishment job at a time
+    concurrency:
+      group: replenish-questions
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Scheduled run — loops over a default set of grades
+      - name: Replenish (scheduled)
+        if: github.event_name == 'schedule'
+        env:
+          ANTHROPIC_API_KEY:      ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_PROJECT_ID:    ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL:  ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY:   ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          for grade in grade1 grade2 grade3 grade4 grade5; do
+            echo "--- $grade ---"
+            node replenish-questions.js --subject math --grade "$grade" --count 20
+          done
+
+      # Manual trigger — use the inputs
+      - name: Replenish (manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          ANTHROPIC_API_KEY:      ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_PROJECT_ID:    ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL:  ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY:   ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          node replenish-questions.js \
+            --subject "${{ inputs.subject }}" \
+            --grade   "${{ inputs.grade }}" \
+            --count   "${{ inputs.count }}" \
+            $DRY_RUN_FLAG
