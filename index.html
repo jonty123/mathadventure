@@ -602,7 +602,31 @@ async function showPracticeSets() {
     document.getElementById('practiceSets').innerHTML = html;
 }
 
-function getRandomQuestions(count) {
+async function getQuestionsFromFirestore(count) {
+    if (!useFirebase || !db) return null;
+    try {
+        const q = query(
+            collection(db, 'questions'),
+            where('subject', '==', 'math'),
+            where('grade', '==', currentGrade),
+            where('category', '==', currentCategory),
+            where('difficulty', '==', currentDifficulty)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        const docs = snap.docs.map(d => ({
+            q: d.data().question_text,
+            a: d.data().correct_answer,
+            explanation: d.data().explanation || ''
+        })).sort(() => Math.random() - 0.5);
+        // Only use Firestore bank if it has enough questions (≥5) to be useful
+        return docs.length >= 5 ? docs.slice(0, Math.min(count, docs.length)) : null;
+    } catch(e) { return null; }
+}
+
+async function getRandomQuestions(count) {
+    const firestoreQs = await getQuestionsFromFirestore(count);
+    if (firestoreQs) return firestoreQs;
     const gradeData = QUESTION_BANK[currentGrade];
     if(!gradeData) return [];
     const pool = gradeData.questions[currentCategory]?.[currentDifficulty] || [];
@@ -610,17 +634,17 @@ function getRandomQuestions(count) {
     return shuffled.slice(0, Math.min(count, pool.length));
 }
 
-function startPractice(setNum) {
+async function startPractice(setNum) {
     isTestMode=false; currentSetNumber=setNum;
-    currentQuestions=getRandomQuestions(10); currentQuestionIndex=0; score=0; attemptsRemaining=2;
+    currentQuestions=await getRandomQuestions(10); currentQuestionIndex=0; score=0; attemptsRemaining=2;
     currentSessionId=Date.now().toString();
     document.getElementById('practiceView').classList.remove('active');
     document.getElementById('questionView').classList.add('active');
     startTimer(false,false); showQuestion();
 }
-function startQuiz(timed) {
+async function startQuiz(timed) {
     isTestMode=true; isTimedQuiz=timed; currentSetNumber=null;
-    currentQuestions=getRandomQuestions(25); currentQuestionIndex=0; score=0;
+    currentQuestions=await getRandomQuestions(25); currentQuestionIndex=0; score=0;
     testAnswers=new Array(25).fill(null); currentSessionId=Date.now().toString();
     if(timed) quizTimeLimit=45*60;
     document.getElementById('practiceView').classList.remove('active');
