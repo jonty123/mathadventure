@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /students/{id}      { allow read, write: if true; }
+    match /submissions/{id}   { allow read, write: if true; }
+    match /completedSets/{id} { allow read, write: if true; }
+    // questions are browser-readable but only writable via Admin SDK
+    match /questions/{id}     { allow read: if true; allow write: if false; }
+  }
+}
