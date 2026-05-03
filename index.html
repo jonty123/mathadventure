@@ -411,7 +411,7 @@ function selectSubject(key) {
     document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`subject-card-${key}`).classList.add('selected');
     document.getElementById('gradeSelectorSection').style.display = 'block';
-    if (key !== 'math') { document.getElementById('modeView').style.display = 'none'; document.getElementById('homeView').style.display = 'none'; document.getElementById('difficultyView').style.display = 'none'; document.getElementById('practiceView').style.display = 'none'; } if (currentGrade) { if (key === 'math') { document.getElementById('modeView').style.display = 'block'; } else { startPractice(1); } }
+    if (key !== 'math') { document.getElementById('modeView').style.display = 'none'; document.getElementById('homeView').style.display = 'none'; document.getElementById('difficultyView').style.display = 'none'; document.getElementById('practiceView').style.display = 'none'; } if (currentGrade) { if (key === 'math') { document.getElementById('modeView').style.display = 'block'; } else { startNonMathPractice(); } }
 }
 
 // ── Reading Comprehension ────────────────────────────────────────────────────
@@ -520,7 +520,7 @@ function selectGrade(gradeKey) {
     document.querySelectorAll('.grade-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`grade-card-${gradeKey}`).classList.add('selected');
     // Show mode selector after grade pick
-    if (selectedSubject === 'math') { document.getElementById('modeView').style.display = 'block'; renderCategories(); } else { startPractice(1); }
+    if (selectedSubject === 'math') { document.getElementById('modeView').style.display = 'block'; renderCategories(); } else { startNonMathPractice(); }
 }
 
 function renderCategories() {
@@ -812,6 +812,26 @@ async function getRandomQuestions(count) {
     const pool = gradeData.questions[currentCategory]?.[currentDifficulty] || [];
     const shuffled = [...pool].sort(()=>Math.random()-0.5);
     return shuffled.slice(0, Math.min(count, pool.length));
+}
+
+async function startNonMathPractice() {
+    currentCategory = 'general';
+    currentDifficulty = 'easy';
+    isTestMode = false;
+    currentSetNumber = 1;
+    currentQuestions = await getQuestionsFromFirestore(10);
+    if (!currentQuestions || currentQuestions.length === 0) {
+        alert('No questions found for ' + selectedSubject + ' ' + currentGrade + '. Please try another grade.');
+        return;
+    }
+    currentQuestionIndex = 0;
+    score = 0;
+    attemptsRemaining = 2;
+    currentSessionId = Date.now().toString();
+    document.getElementById('practiceView').classList.remove('active');
+    document.getElementById('questionView').classList.add('active');
+    startTimer(false, false);
+    showQuestion();
 }
 
 async function startPractice(setNum) {
