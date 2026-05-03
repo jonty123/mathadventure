@@ -210,19 +210,20 @@ Hard requirements for EVERY question:
 4. Curriculum-aligned to standard ${meta.label} expectations.
 5. correct_answer is always a STRING (e.g. "8", not 8).
 6. explanation is 1–2 child-friendly sentences explaining why the answer is correct.
+7. answer_options must always contain exactly 5 strings: the correct answer plus 4 plausible but wrong distractors. The correct answer must appear somewhere in the list. Shuffle the order so correct answer is not always first.
 
 Difficulty distribution (approximate): 40 % easy, 40 % medium, 20 % hard.
 
 Return a JSON array ONLY — no markdown fences, no other text.
 Each element must match this exact schema:
 {
-  "question_text":      "What is 6 × 7?",
-  "correct_answer":     "42",
-  "explanation":        "6 × 7 = 42. You can count 7 groups of 6.",
-  "difficulty":         "easy",
-  "category":           "multiplication",
-  "answer_options":     [],
-  "is_safe":            true,
+  "question_text": "Which planet is closest to the Sun?",
+  "correct_answer": "Mercury",
+  "explanation": "Mercury is the first planet from the Sun.",
+  "difficulty": "easy",
+  "category": "solar-system",
+  "answer_options": ["Mercury", "Venus", "Earth", "Mars", "Jupiter"],
+  "is_safe": true,
   "curriculum_aligned": true
 }`;
 
@@ -449,6 +450,12 @@ async function main() {
   console.log(`Dry-run  : ${dryRun}`);
   console.log();
 
+  const SUPPORTED_GRADES = ['gradeK', 'grade1', 'grade2', 'grade3', 'grade4', 'grade5'];
+  if (!SUPPORTED_GRADES.includes(grade)) {
+    console.error('Grade ' + grade + ' is outside the supported range. Use gradeK through grade5 only.');
+    process.exit(1);
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('Error: ANTHROPIC_API_KEY environment variable is not set.');
     process.exit(1);
@@ -557,6 +564,8 @@ async function main() {
           failed++;
           passed--;
         }
+      } else if (passed === 1) {
+        console.log('  Sample question:\n' + JSON.stringify(q, null, 2));
       }
     }
   }
