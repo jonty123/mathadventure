@@ -412,7 +412,7 @@ function selectSubject(key) {
     document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`subject-card-${key}`).classList.add('selected');
     document.getElementById('gradeSelectorSection').style.display = 'block';
-    if (key !== 'math') { document.getElementById('modeView').style.display = 'none'; document.getElementById('homeView').style.display = 'none'; document.getElementById('difficultyView').style.display = 'none'; document.getElementById('practiceView').style.display = 'none'; } if (currentGrade) { if (key === 'math') { document.getElementById('modeView').style.display = 'block'; } else { startNonMathPractice(); } }
+    if (key !== 'math') { document.getElementById('modeView').style.display = 'none'; document.getElementById('homeView').style.display = 'none'; document.getElementById('difficultyView').style.display = 'none'; document.getElementById('practiceView').style.display = 'none'; document.querySelectorAll('.grade-card').forEach(c => c.classList.remove('selected')); } if (currentGrade) { if (key === 'math') { document.getElementById('modeView').style.display = 'block'; } else { startNonMathPractice(); } }
 }
 
 // ── Reading Comprehension ────────────────────────────────────────────────────
