@@ -333,7 +333,31 @@ window.viewStudentProgress = viewStudentProgress;
 window.resetStudentProgress = resetStudentProgress;
 window.closeConfigModal = closeConfigModal;
 window.saveFirebaseConfig = saveFirebaseConfig;
-window.selectSubject = selectSubject;
+window.function selectSubject(key) {
+    selectedSubject = key;
+    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`subject-card-${key}`).classList.add('selected');
+    document.getElementById(`gradeSelectorSection`).style.display = 'block';
+    if (currentGrade) {
+        if (key === 'math') {
+            document.getElementById('modeView').style.display = 'block';
+        } else {
+            startPractice(1);
+        }
+    }
+} = function selectSubject(key) {
+    selectedSubject = key;
+    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`subject-card-${key}`).classList.add('selected');
+    document.getElementById(`gradeSelectorSection`).style.display = 'block';
+    if (currentGrade) {
+        if (key === 'math') {
+            document.getElementById('modeView').style.display = 'block';
+        } else {
+            startPractice(1);
+        }
+    }
+};
 window.startRCSession = startRCSession;
 window.submitRCAnswers = submitRCAnswers;
 
@@ -399,14 +423,38 @@ const SUBJECTS = [
 function renderSubjectSelector() {
     const grid = document.getElementById('subjectsGrid');
     grid.innerHTML = SUBJECTS.map(s => `
-        <div class="subject-card" id="subject-card-${s.key}" style="background:${s.bg}" onclick="selectSubject('${s.key}')">
+        <div class="subject-card" id="subject-card-${s.key}" style="background:${s.bg}" onclick="function selectSubject(key) {
+    selectedSubject = key;
+    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`subject-card-${key}`).classList.add('selected');
+    document.getElementById(`gradeSelectorSection`).style.display = 'block';
+    if (currentGrade) {
+        if (key === 'math') {
+            document.getElementById('modeView').style.display = 'block';
+        } else {
+            startPractice(1);
+        }
+    }
+}('${s.key}')">
             <span class="subject-emoji">${s.emoji}</span>
             <div class="subject-label">${s.label}</div>
         </div>
     `).join('');
 }
 
-function selectSubject(key) {
+function function selectSubject(key) {
+    selectedSubject = key;
+    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`subject-card-${key}`).classList.add('selected');
+    document.getElementById(`gradeSelectorSection`).style.display = 'block';
+    if (currentGrade) {
+        if (key === 'math') {
+            document.getElementById('modeView').style.display = 'block';
+        } else {
+            startPractice(1);
+        }
+    }
+}(key) {
     selectedSubject = key;
     document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`subject-card-${key}`).classList.add('selected');
