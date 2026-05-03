@@ -333,31 +333,7 @@ window.viewStudentProgress = viewStudentProgress;
 window.resetStudentProgress = resetStudentProgress;
 window.closeConfigModal = closeConfigModal;
 window.saveFirebaseConfig = saveFirebaseConfig;
-window.function selectSubject(key) {
-    selectedSubject = key;
-    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`subject-card-${key}`).classList.add('selected');
-    document.getElementById(`gradeSelectorSection`).style.display = 'block';
-    if (currentGrade) {
-        if (key === 'math') {
-            document.getElementById('modeView').style.display = 'block';
-        } else {
-            startPractice(1);
-        }
-    }
-} = function selectSubject(key) {
-    selectedSubject = key;
-    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`subject-card-${key}`).classList.add('selected');
-    document.getElementById(`gradeSelectorSection`).style.display = 'block';
-    if (currentGrade) {
-        if (key === 'math') {
-            document.getElementById('modeView').style.display = 'block';
-        } else {
-            startPractice(1);
-        }
-    }
-};
+window.selectSubject = selectSubject;
 window.startRCSession = startRCSession;
 window.submitRCAnswers = submitRCAnswers;
 
@@ -423,57 +399,19 @@ const SUBJECTS = [
 function renderSubjectSelector() {
     const grid = document.getElementById('subjectsGrid');
     grid.innerHTML = SUBJECTS.map(s => `
-        <div class="subject-card" id="subject-card-${s.key}" style="background:${s.bg}" onclick="function selectSubject(key) {
-    selectedSubject = key;
-    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`subject-card-${key}`).classList.add('selected');
-    document.getElementById(`gradeSelectorSection`).style.display = 'block';
-    if (currentGrade) {
-        if (key === 'math') {
-            document.getElementById('modeView').style.display = 'block';
-        } else {
-            startPractice(1);
-        }
-    }
-}('${s.key}')">
+        <div class="subject-card" id="subject-card-${s.key}" style="background:${s.bg}" onclick="selectSubject('${s.key}')">
             <span class="subject-emoji">${s.emoji}</span>
             <div class="subject-label">${s.label}</div>
         </div>
     `).join('');
 }
 
-function function selectSubject(key) {
+function selectSubject(key) {
     selectedSubject = key;
     document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`subject-card-${key}`).classList.add('selected');
-    document.getElementById(`gradeSelectorSection`).style.display = 'block';
-    if (currentGrade) {
-        if (key === 'math') {
-            document.getElementById('modeView').style.display = 'block';
-        } else {
-            startPractice(1);
-        }
-    }
-}(key) {
-    selectedSubject = key;
-    document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById(`subject-card-${key}`).classList.add('selected');
-    document.getElementById(`gradeSelectorSection`).style.display = 'block';
-    
-    // Hide math topic cards for non-math subjects
-    const topicSection = document.getElementById('topicSection');
-    if (topicSection) {
-        topicSection.style.display = key === 'math' ? 'block' : 'none';
-    }
-    
-    // For non-math, skip topic selection and go straight to questions
-    if (currentGrade) {
-        if (key === 'math') {
-            document.getElementById('modeView').style.display = 'block';
-        } else {
-            startPractice(1);
-        }
-    }
+    document.getElementById('gradeSelectorSection').style.display = 'block';
+    if (currentGrade) document.getElementById('modeView').style.display = 'block';
 }
 
 // ── Reading Comprehension ────────────────────────────────────────────────────
@@ -581,15 +519,9 @@ function selectGrade(gradeKey) {
     currentGrade = gradeKey;
     document.querySelectorAll('.grade-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`grade-card-${gradeKey}`).classList.add('selected');
-    
-    if (selectedSubject === 'math') {
-        // Math: show topic cards as before
-        document.getElementById('modeView').style.display = 'block';
-        renderCategories();
-    } else {
-        // Non-math: skip topics, go straight to questions
-	startPractice(1);
-    }
+    // Show mode selector after grade pick
+    document.getElementById('modeView').style.display = 'block';
+    renderCategories();
 }
 
 function renderCategories() {
