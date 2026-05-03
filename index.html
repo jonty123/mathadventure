@@ -325,6 +325,7 @@ window.goToModeSelection = goToModeSelection;
 window.startPractice = startPractice;
 window.startQuiz = startQuiz;
 window.checkAnswer = checkAnswer;
+window.checkMCQAnswer = checkMCQAnswer;
 window.nextQuestion = nextQuestion;
 window.nextTestQuestion = nextTestQuestion;
 window.previousTestQuestion = previousTestQuestion;
@@ -862,6 +863,15 @@ function showQuestion() {
     document.getElementById('progressBar').style.width=prog+'%';
     document.getElementById('progressBar').textContent=`${currentQuestionIndex+1} / ${currentQuestions.length}`;
     attemptsRemaining=2;
+    const hasMCQ=Array.isArray(q.answer_options) && q.answer_options.length===5;
+    const accentMap={'science':'#0984e3','english':'#00b894','history':'#e17055','geography':'#00cec9','reading-comprehension':'#e84393'};
+    const accent=accentMap[selectedSubject]||'#6c5ce7';
+    const mcqHtml=hasMCQ ? q.answer_options.map((opt,i)=>
+        `<button id="mcq-btn-${i}" data-option="${opt.replace(/"/g,'&quot;')}" onclick="checkMCQAnswer(this)"
+          style="display:block;width:100%;text-align:left;padding:12px 16px;margin:8px 0;border:2px solid #ddd;border-radius:10px;background:#fff;font-size:1em;cursor:pointer;transition:border-color 0.15s;"
+          onmouseover="if(!this.dataset.locked)this.style.borderColor='${accent}'"
+          onmouseout="if(!this.dataset.locked)this.style.borderColor='#ddd'">${opt}</button>`
+    ).join('') : '';
     document.getElementById('questionContainer').innerHTML=`
         <div class="question-container">
             <div class="question-header">
@@ -869,22 +879,25 @@ function showQuestion() {
                 <div class="attempts-info">Attempts Remaining: ${attemptsRemaining}</div>
             </div>
             <div class="question-text">${q.q}</div>
-            <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here..." autocomplete="off">
+            ${hasMCQ ? mcqHtml : `<input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here..." autocomplete="off">
             <div class="button-group">
                 <button class="btn btn-check" onclick="checkAnswer()" id="checkBtn" disabled>✓ Check Answer</button>
                 <button class="btn btn-next" onclick="nextQuestion()" style="display:none;" id="nextBtn">Next →</button>
-            </div>
+            </div>`}
+            ${hasMCQ ? `<button class="btn btn-next" onclick="nextQuestion()" style="display:none;margin-top:10px;" id="nextBtn">Next →</button>` : ''}
             <div class="feedback" id="feedback"></div>
         </div>`;
-    const inp=document.getElementById('answerInput');
-    inp.focus();
-    inp.addEventListener('input',function(){ document.getElementById('checkBtn').disabled=this.value.trim()===''; });
-    inp.addEventListener('keypress',function(e){
-        if(e.key==='Enter' && this.value.trim()!==''){
-            const nb=document.getElementById('nextBtn');
-            nb.style.display==='none' ? checkAnswer() : nextQuestion();
-        }
-    });
+    if(!hasMCQ){
+        const inp=document.getElementById('answerInput');
+        inp.focus();
+        inp.addEventListener('input',function(){ document.getElementById('checkBtn').disabled=this.value.trim()===''; });
+        inp.addEventListener('keypress',function(e){
+            if(e.key==='Enter' && this.value.trim()!==''){
+                const nb=document.getElementById('nextBtn');
+                nb.style.display==='none' ? checkAnswer() : nextQuestion();
+            }
+        });
+    }
 }
 
 function checkAnswer() {
@@ -914,6 +927,39 @@ function checkAnswer() {
             inp.disabled=true;
             document.getElementById('checkBtn').style.display='none';
             document.getElementById('nextBtn').style.display='block';
+        }
+    }
+}
+
+function checkMCQAnswer(btn) {
+    const q=currentQuestions[currentQuestionIndex];
+    const selected=btn.dataset.option;
+    const correct=q.a;
+    const fb=document.getElementById('feedback');
+    if(selected.toLowerCase()===correct.toLowerCase()){
+        score++;
+        btn.style.borderColor='#00b894'; btn.style.background='#d4edda'; btn.dataset.locked='1';
+        fb.className='feedback correct show';
+        fb.innerHTML=`<div class="feedback-title">🎉 Correct! Well done!</div><div class="feedback-text">${q.explanation}</div>`;
+        document.querySelectorAll('[id^="mcq-btn-"]').forEach(b=>{ b.onclick=null; b.style.cursor='default'; b.dataset.locked='1'; });
+        document.getElementById('nextBtn').style.display='block';
+    } else {
+        attemptsRemaining--;
+        btn.style.borderColor='#e17055'; btn.style.background='#ffeaea'; btn.dataset.locked='1';
+        btn.style.animation='shake 0.4s ease';
+        setTimeout(()=>{ btn.style.animation=''; },400);
+        document.querySelector('.attempts-info').textContent=`Attempts Remaining: ${attemptsRemaining}`;
+        if(attemptsRemaining<=0){
+            fb.className='feedback incorrect show';
+            fb.innerHTML=`<div class="feedback-title">💡 Out of attempts!</div><div class="feedback-text">The correct answer is: <strong>${correct}</strong><br><br>${q.explanation}</div>`;
+            document.querySelectorAll('[id^="mcq-btn-"]').forEach(b=>{
+                b.onclick=null; b.style.cursor='default'; b.dataset.locked='1';
+                if(b.dataset.option.toLowerCase()===correct.toLowerCase()){ b.style.borderColor='#00b894'; b.style.background='#d4edda'; }
+            });
+            setTimeout(()=>{ document.getElementById('nextBtn').style.display='block'; },1500);
+        } else {
+            fb.className='feedback incorrect show';
+            fb.innerHTML=`<div class="feedback-title">💡 Not quite right!</div><div class="feedback-text">You have ${attemptsRemaining} more chance. Try again!</div>`;
         }
     }
 }
