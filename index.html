@@ -866,6 +866,7 @@ function showQuestion() {
     document.getElementById('progressBar').style.width=prog+'%';
     document.getElementById('progressBar').textContent=`${currentQuestionIndex+1} / ${currentQuestions.length}`;
     attemptsRemaining=2;
+    console.log('DEBUG q:', JSON.stringify(q));
     const hasMCQ=Array.isArray(q.answer_options) && q.answer_options.length===5;
     const accentMap={'science':'#0984e3','english':'#00b894','history':'#e17055','geography':'#00cec9','reading-comprehension':'#e84393'};
     const accent=accentMap[selectedSubject]||'#6c5ce7';
