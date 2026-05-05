@@ -6,5 +6,7 @@ service cloud.firestore {
     match /completedSets/{id} { allow read, write: if true; }
     // questions are browser-readable but only writable via Admin SDK
     match /questions/{id}     { allow read: if true; allow write: if false; }
+    // passages are browser-readable for reading comprehension
+    match /passages/{id}      { allow read: if true; allow write: if false; }
   }
 }

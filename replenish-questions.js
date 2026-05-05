@@ -36,17 +36,18 @@ const VALID_SUBJECTS = [
 
 const { values: args } = parseArgs({
   options: {
-    subject:   { type: 'string',  default: 'math'  },
-    grade:     { type: 'string'                    },
-    count:     { type: 'string',  default: '20'    },
-    'dry-run': { type: 'boolean', default: false   },
+    subject:                  { type: 'string',  default: 'math'  },
+    grade:                    { type: 'string'                    },
+    count:                    { type: 'string',  default: '20'    },
+    'dry-run':                { type: 'boolean', default: false   },
+    'from-existing-passages': { type: 'boolean', default: false   },
   },
   allowPositionals: false,
 });
 
-if (!args.grade) {
+if (!args.grade && !args['from-existing-passages']) {
   console.error('Error: --grade is required (e.g. --grade grade3)');
-  console.error('Valid grades: gradeK, grade1 … grade12');
+  console.error('  Exception: --from-existing-passages does not require --grade (processes all passages)');
   process.exit(1);
 }
 if (!VALID_SUBJECTS.includes(args.subject)) {
@@ -54,11 +55,15 @@ if (!VALID_SUBJECTS.includes(args.subject)) {
   process.exit(1);
 }
 
-const subject = args.subject;
-const grade   = args.grade;
-const isRC    = subject === 'reading-comprehension';
-const count   = Math.max(1, Math.min(isRC ? 20 : 100, parseInt(args.count, 10) || (isRC ? 5 : 20)));
-const dryRun  = args['dry-run'];
+const subject              = args.subject;
+const grade                = args.grade ?? '';
+const isRC                 = subject === 'reading-comprehension';
+const fromExistingPassages = isRC && args['from-existing-passages'];
+const rawCount             = parseInt(args.count, 10) || 0;
+const count = fromExistingPassages
+  ? Math.max(1, Math.min(10, rawCount || 7))
+  : Math.max(1, Math.min(isRC ? 20 : 100, rawCount || (isRC ? 5 : 20)));
+const dryRun = args['dry-run'];
 
 // ── Math grade metadata (unchanged — math fallback) ──────────────────────────
 const GRADE_META = {
@@ -257,6 +262,12 @@ The passage must be:
 The passage must be followed by exactly 5 questions that test:
   main-idea, vocabulary, inference, detail, and sequence (one of each category)
 
+IMPORTANT MCQ requirements for every question:
+- answer_options: exactly 4 strings (the choices shown to the student)
+- correct_answer: the FULL TEXT of the correct option, copied EXACTLY from answer_options (must match one entry character-for-character)
+- The 3 wrong options must be plausible distractors — not obviously wrong
+- Shuffle position so the correct answer is not always first
+
 Return a single JSON object ONLY — no markdown fences, no other text:
 {
   "passage": {
@@ -267,51 +278,51 @@ Return a single JSON object ONLY — no markdown fences, no other text:
   "questions": [
     {
       "question_text":      "What is the main idea of this passage?",
-      "correct_answer":     "The Amazon is the world's largest rainforest.",
-      "explanation":        "The passage focuses on the Amazon's size and importance.",
+      "answer_options":     ["The Amazon is the world's largest rainforest and home to millions of species.", "Rainforests are disappearing due to deforestation.", "The Amazon River floods every year.", "Most animals live in the treetops."],
+      "correct_answer":     "The Amazon is the world's largest rainforest and home to millions of species.",
+      "explanation":        "The passage focuses on the Amazon's size and biodiversity throughout.",
       "difficulty":         "easy",
       "category":           "main-idea",
-      "answer_options":     [],
       "is_safe":            true,
       "curriculum_aligned": true
     },
     {
       "question_text":      "What does the word 'diverse' mean in the passage?",
+      "answer_options":     ["having many different types", "very large in size", "difficult to find", "living near water"],
       "correct_answer":     "having many different types",
-      "explanation":        "Diverse means a wide variety. The passage describes many species.",
+      "explanation":        "Diverse means a wide variety. The passage uses it to describe the many species found there.",
       "difficulty":         "medium",
       "category":           "vocabulary",
-      "answer_options":     [],
       "is_safe":            true,
       "curriculum_aligned": true
     },
     {
-      "question_text":      "...",
-      "correct_answer":     "...",
-      "explanation":        "...",
+      "question_text":      "Based on the passage, why might scientists want to protect the Amazon?",
+      "answer_options":     ["It contains species that may hold cures for diseases.", "It is the only forest left in South America.", "Scientists live and work there year-round.", "It produces most of the world's food supply."],
+      "correct_answer":     "It contains species that may hold cures for diseases.",
+      "explanation":        "The passage implies many undiscovered species could be valuable to science and medicine.",
       "difficulty":         "medium",
       "category":           "inference",
-      "answer_options":     [],
       "is_safe":            true,
       "curriculum_aligned": true
     },
     {
-      "question_text":      "...",
-      "correct_answer":     "...",
-      "explanation":        "...",
+      "question_text":      "According to the passage, how much of Earth's surface does the Amazon cover?",
+      "answer_options":     ["About 5%", "About 10%", "About 25%", "About 50%"],
+      "correct_answer":     "About 5%",
+      "explanation":        "The passage states the Amazon covers roughly 5% of Earth's surface.",
       "difficulty":         "easy",
       "category":           "detail",
-      "answer_options":     [],
       "is_safe":            true,
       "curriculum_aligned": true
     },
     {
-      "question_text":      "...",
-      "correct_answer":     "...",
-      "explanation":        "...",
+      "question_text":      "According to the passage, what happens first in the Amazon's water cycle?",
+      "answer_options":     ["Clouds form over the canopy.", "Rain falls on the treetops.", "Trees release water vapour.", "Rivers carry water to the sea."],
+      "correct_answer":     "Trees release water vapour.",
+      "explanation":        "The passage describes trees releasing water vapour first, which then rises and forms clouds before falling as rain.",
       "difficulty":         "hard",
       "category":           "sequence",
-      "answer_options":     [],
       "is_safe":            true,
       "curriculum_aligned": true
     }
@@ -327,6 +338,66 @@ Return a single JSON object ONLY — no markdown fences, no other text:
   const text  = response.content[0].text.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('RC response did not contain a JSON object:\n' + text.slice(0, 300));
+  return JSON.parse(match[0]);
+}
+
+// ── Generate MCQ questions for an existing passage ───────────────────────────
+async function generateQuestionsForPassage(client, passage, questionCount) {
+  const passageGrade = passage.grade ?? grade;
+  const meta = SUBJECT_GRADE_META['reading-comprehension']?.[passageGrade]
+    ?? { label: 'school-age students', age: 'school-age' };
+
+  const baseCategories  = ['main-idea', 'vocabulary', 'inference', 'detail', 'sequence'];
+  const extraCategories = ['inference', 'detail', 'vocabulary', 'main-idea', 'sequence'];
+  const categoryList = questionCount <= 5
+    ? baseCategories.slice(0, questionCount)
+    : [...baseCategories, ...extraCategories.slice(0, questionCount - 5)];
+
+  const prompt = `You are an experienced educational content writer creating reading comprehension questions for a children's quiz app.
+
+Given the following passage, generate exactly ${questionCount} multiple-choice questions for ${meta.label} students (ages ${meta.age}).
+
+PASSAGE TITLE: ${passage.title}
+PASSAGE TEXT:
+${passage.text}
+
+Hard requirements for EVERY question:
+1. answer_options: exactly 4 strings (the choices shown to the student).
+2. correct_answer: the FULL TEXT of the correct option, copied EXACTLY from answer_options (must match one entry character-for-character).
+3. The 3 wrong options must be plausible distractors grounded in the passage — not obviously wrong.
+4. Shuffle position so the correct answer is not always first.
+5. All questions must be answerable from the passage text alone.
+6. Age-appropriate vocabulary for ages ${meta.age}.
+7. Spread questions across these categories (use each at most twice): ${categoryList.join(', ')}.
+8. Mix of easy, medium, and hard difficulty.
+
+Return a JSON array ONLY — no markdown fences, no other text.
+Each element must match this exact schema:
+{
+  "question_text": "What is the main idea of this passage?",
+  "answer_options": [
+    "Butterflies go through four stages of life.",
+    "Butterflies only live for one week.",
+    "Caterpillars are more interesting than butterflies.",
+    "Most butterflies live in rainforests."
+  ],
+  "correct_answer": "Butterflies go through four stages of life.",
+  "explanation": "The passage describes all four stages: egg, larva, chrysalis, and adult butterfly.",
+  "difficulty": "easy",
+  "category": "main-idea",
+  "is_safe": true,
+  "curriculum_aligned": true
+}`;
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 6000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text  = response.content[0].text.trim();
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('generateQuestionsForPassage: response did not contain a JSON array:\n' + text.slice(0, 300));
   return JSON.parse(match[0]);
 }
 
@@ -358,6 +429,15 @@ function validateQuestion(q) {
   if (UNSAFE_RE.test(String(q.correct_answer)))
     errors.push('correct_answer contains a blocked keyword');
 
+  return errors;
+}
+
+function validateRCQuestion(q) {
+  const errors = validateQuestion(q);
+  if (!Array.isArray(q.answer_options) || q.answer_options.length !== 4)
+    errors.push('RC question must have exactly 4 answer_options');
+  else if (!q.answer_options.map(o => String(o).trim()).includes(String(q.correct_answer).trim()))
+    errors.push('correct_answer must match one of the 4 answer_options exactly');
   return errors;
 }
 
@@ -441,17 +521,19 @@ async function insertPassageWithQuestions(db, Timestamp, passageObj) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  const countLabel = isRC ? `${count} passage(s)` : `${count} question(s)`;
+  const countLabel = fromExistingPassages
+    ? `${count} questions/passage (from existing passages)`
+    : isRC ? `${count} passage(s)` : `${count} question(s)`;
   console.log('\nMathAdventure — Question Bank Replenishment');
   console.log('═══════════════════════════════════════════');
   console.log(`Subject  : ${subject}`);
-  console.log(`Grade    : ${grade}`);
+  console.log(`Grade    : ${grade || '(all)'}`);
   console.log(`Count    : ${countLabel}`);
   console.log(`Dry-run  : ${dryRun}`);
   console.log();
 
   const SUPPORTED_GRADES = ['gradeK', 'grade1', 'grade2', 'grade3', 'grade4', 'grade5'];
-  if (!SUPPORTED_GRADES.includes(grade)) {
+  if (!fromExistingPassages && grade && !SUPPORTED_GRADES.includes(grade)) {
     console.error('Grade ' + grade + ' is outside the supported range. Use gradeK through grade5 only.');
     process.exit(1);
   }
@@ -462,13 +544,99 @@ async function main() {
   }
 
   let db = null, Timestamp = null;
-  if (!dryRun) {
+  if (!dryRun || fromExistingPassages) {
     console.log('Connecting to Firestore...');
     ({ db, Timestamp } = await buildFirestore());
     console.log('Connected.\n');
   }
 
   const client = new Anthropic();
+
+  // ── From-existing-passages path ──
+  if (isRC && fromExistingPassages) {
+    let passagesQuery = db.collection('passages').where('subject', '==', 'reading-comprehension');
+    if (grade) passagesQuery = passagesQuery.where('grade', '==', grade);
+    const passagesSnap = await passagesQuery.get();
+
+    if (passagesSnap.empty) {
+      console.error('No passages found in Firestore matching those criteria.');
+      process.exit(1);
+    }
+    console.log(`Found ${passagesSnap.size} passage(s). Generating ${count} questions each via Claude API...\n`);
+
+    let passagesDone = 0, passagesFailed = 0, questionsInserted = 0;
+    const failures = [];
+
+    for (const passageDoc of passagesSnap.docs) {
+      const passage = { id: passageDoc.id, ...passageDoc.data() };
+      console.log(`  Passage ${passagesDone + passagesFailed + 1} / ${passagesSnap.size}: "${String(passage.title).slice(0, 50)}"...`);
+
+      let questions;
+      try {
+        questions = await generateQuestionsForPassage(client, passage, count);
+      } catch (err) {
+        console.error(`  ✗ generation failed: ${err.message}`);
+        passagesFailed++;
+        continue;
+      }
+
+      const questionErrors = questions.flatMap(q => validateRCQuestion(q));
+      if (questionErrors.length > 0) {
+        passagesFailed++;
+        failures.push({ title: String(passage.title).slice(0, 50), errors: questionErrors });
+        console.log(`  ✗ validation failed (${questionErrors.length} error(s))`);
+        continue;
+      }
+
+      if (!dryRun) {
+        try {
+          const batch = db.batch();
+          const ids = [];
+          for (const q of questions) {
+            const qRef = db.collection('questions').doc();
+            ids.push(qRef.id);
+            batch.set(qRef, {
+              subject:        'reading-comprehension',
+              grade:          passage.grade ?? grade,
+              difficulty:     q.difficulty,
+              category:       String(q.category).trim().toLowerCase().replace(/\s+/g, '-'),
+              question_text:  String(q.question_text).trim(),
+              answer_options: q.answer_options.map(o => String(o).trim()),
+              correct_answer: String(q.correct_answer).trim(),
+              explanation:    String(q.explanation ?? '').trim(),
+              created_at:     Timestamp.now(),
+              source:         'ai-generated',
+              passage_id:     passage.id,
+            });
+          }
+          await batch.commit();
+          questionsInserted += ids.length;
+          passagesDone++;
+          console.log(`  ✓ ${ids.length} questions inserted`);
+        } catch (err) {
+          console.error(`  ✗ batch insert failed: ${err.message}`);
+          passagesFailed++;
+        }
+      } else {
+        passagesDone++;
+        console.log(`  ✓ valid (dry-run)`);
+      }
+    }
+
+    console.log('\n── Summary ──────────────────────────');
+    console.log(`Passages processed  : ${passagesSnap.size}`);
+    console.log(`Passages succeeded  : ${passagesDone}`);
+    console.log(`Passages failed     : ${passagesFailed}`);
+    console.log(`Questions inserted  : ${dryRun ? 'skipped (dry-run)' : questionsInserted}`);
+    if (failures.length > 0) {
+      console.log('\nValidation failures:');
+      for (const { title, errors } of failures) {
+        console.log(`  "${title}"`);
+        for (const e of errors) console.log(`    → ${e}`);
+      }
+    }
+    return;
+  }
 
   // ── Reading Comprehension path ──
   if (isRC) {
@@ -489,7 +657,7 @@ async function main() {
       }
 
       const passageErrors   = validatePassage(ps.passage ?? {});
-      const questionErrors  = (ps.questions ?? []).flatMap(q => validateQuestion(q));
+      const questionErrors  = (ps.questions ?? []).flatMap(q => validateRCQuestion(q));
 
       if (passageErrors.length > 0 || questionErrors.length > 0) {
         failedPassages++;
