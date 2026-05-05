@@ -309,6 +309,7 @@ let currentSessionId = null, currentSetNumber = null;
 let attemptsRemaining = 2;
 let timerInterval = null, startTime = null, elapsedTime = 0;
 let isTimedQuiz = false, quizTimeLimit = 0;
+let currentPassage = null;
 
 // ── Expose globals ──
 window.saveStudentInfo = saveStudentInfo;
@@ -436,8 +437,23 @@ async function startRCSession() {
         const pd = randomDoc.data();
         const passageId = randomDoc.id;
 
+        // Store the passage for display in showQuestion()
+        currentPassage = {
+            id: passageId,
+            title: pd.title,
+            text: pd.text
+        };
+
         const qSnap = await getDocs(query(collection(db, 'questions'), where('passage_id', '==', passageId)));
-        const rcQs = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const rcQs = qSnap.docs.map(d => {
+            const data = d.data();
+            return {
+                q: data.question_text,
+                a: data.correct_answer,
+                explanation: data.explanation || '',
+                passage_id: passageId
+            };
+        }).sort(() => Math.random() - 0.5);
 
         if (!rcQs.length) {
             rcContent.innerHTML = '<p style="text-align:center;color:#636e72;padding:20px;">No questions found for this passage.</p>' +
@@ -445,26 +461,16 @@ async function startRCSession() {
             return;
         }
 
-        let html = `<h2 style="font-size:1.5em;margin-bottom:16px;color:#2d3436;text-align:center;">📚 Reading Adventure</h2>
-            <div class="passage-panel">
-                <div class="passage-title">${pd.title}</div>
-                <div class="passage-text">${pd.text.replace(/\n/g, '<br>')}</div>
-            </div>
-            <div class="rc-questions-list">`;
-        rcQs.forEach((q, i) => {
-            html += `<div class="rc-question-item" id="rc-q-${i}">
-                <div class="rc-question-num">Question ${i + 1} &mdash; ${q.category}</div>
-                <div class="rc-question-text">${q.question_text}</div>
-                <input type="text" class="rc-answer-input" id="rc-ans-${i}" placeholder="Your answer..." autocomplete="off">
-            </div>`;
-        });
-        html += `</div>
-            <button class="btn btn-check" onclick="submitRCAnswers()" style="width:100%;margin-bottom:12px;">✓ Submit All Answers</button>
-            <button class="btn btn-next" onclick="startRCSession()" style="width:100%;margin-bottom:20px;">↺ New Passage</button>`;
-
-        window._rcQuestions = rcQs;
-        window._rcPassageId = passageId;
-        rcContent.innerHTML = html;
+        // Load questions into the normal question flow (up to 10 questions)
+        currentQuestions = rcQs.slice(0, 10);
+        currentQuestionIndex = 0;
+        score = 0;
+        attemptsRemaining = 2;
+        currentSessionId = Date.now().toString();
+        document.getElementById('rcView').classList.remove('active');
+        document.getElementById('questionView').classList.add('active');
+        startTimer(false, false);
+        showQuestion();
     } catch(e) {
         console.error(e);
         rcContent.innerHTML = `<p style="text-align:center;color:#e17055;padding:20px;">Error loading passage: ${e.message}</p>`;
@@ -521,7 +527,14 @@ function selectGrade(gradeKey) {
     document.querySelectorAll('.grade-card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`grade-card-${gradeKey}`).classList.add('selected');
     // Show mode selector after grade pick
-    if (selectedSubject === 'math') { document.getElementById('modeView').style.display = 'block'; renderCategories(); } else { startNonMathPractice(); }
+    if (selectedSubject === 'math') { 
+        document.getElementById('modeView').style.display = 'block'; 
+        renderCategories(); 
+    } else if (selectedSubject === 'reading-comprehension') {
+        startRCSession();
+    } else { 
+        startNonMathPractice(); 
+    }
 }
 
 function renderCategories() {
@@ -753,8 +766,17 @@ function goToDifficulty() {
     stopTimer();
 }
 function goToPractice() {
-    document.getElementById('practiceView').classList.add('active');
-    ['questionView','testView'].forEach(id=>document.getElementById(id).classList.remove('active'));
+    if (selectedSubject === 'reading-comprehension') {
+        // For reading comprehension, show RC view and start a new session
+        document.getElementById('questionView').classList.remove('active');
+        document.getElementById('rcView').classList.add('active');
+        currentPassage = null;
+        startRCSession();
+    } else {
+        // For other subjects, show practice view
+        document.getElementById('practiceView').classList.add('active');
+        ['questionView','testView'].forEach(id=>document.getElementById(id).classList.remove('active'));
+    }
     stopTimer();
 }
 
@@ -876,7 +898,17 @@ function showQuestion() {
           onmouseover="if(!this.dataset.locked)this.style.borderColor='${accent}'"
           onmouseout="if(!this.dataset.locked)this.style.borderColor='#ddd'">${opt}</button>`
     ).join('') : '';
+    
+    // Build passage display for reading comprehension
+    const passageHtml = selectedSubject === 'reading-comprehension' && currentPassage 
+        ? `<div class="passage-panel">
+             <div class="passage-title">${currentPassage.title}</div>
+             <div class="passage-text">${currentPassage.text.replace(/\n/g, '<br>')}</div>
+           </div>` 
+        : '';
+    
     document.getElementById('questionContainer').innerHTML=`
+        ${passageHtml}
         <div class="question-container">
             <div class="question-header">
                 <div style="font-size:0.9em;opacity:0.9;">Question ${currentQuestionIndex+1} of ${currentQuestions.length}</div>
@@ -977,16 +1009,17 @@ async function showScore() {
     stopTimer();
     const pct=(score/currentQuestions.length)*100;
     let emoji='🎉', msg='Great job!';
-    if(pct===100){ emoji='🏆'; msg='Perfect score! You\'re a math superstar!'; }
-    else if(pct>=80){ emoji='⭐'; msg='Excellent work! Keep it up!'; }
-    else if(pct>=60){ emoji='👍'; msg='Good effort! Practice makes perfect!'; }
-    else { emoji='💪'; msg='Keep practicing! You\'re getting better!'; }
+    if(pct===100){ emoji='🏆'; msg=selectedSubject==='reading-comprehension'?'Perfect comprehension! 📚':'Perfect score! You\'re a math superstar!'; }
+    else if(pct>=80){ emoji='⭐'; msg=selectedSubject==='reading-comprehension'?'Excellent reading comprehension!':'Excellent work! Keep it up!'; }
+    else if(pct>=60){ emoji='👍'; msg=selectedSubject==='reading-comprehension'?'Good reading! Keep practicing!':'Good effort! Practice makes perfect!'; }
+    else { emoji='💪'; msg=selectedSubject==='reading-comprehension'?'Keep reading! You\'ll improve!':'Keep practicing! You\'re getting better!'; }
     if(pct>=70 && !isTestMode && currentSetNumber) await markSetComplete();
     if(useFirebase && db && currentStudentId) {
         try {
             await addDoc(collection(db,'submissions'),{
                 studentId:currentStudentId, studentName:currentStudentName,
-                grade:currentGrade, category:currentCategory, difficulty:currentDifficulty,
+                subject:selectedSubject,
+                grade:currentGrade, category:currentCategory||'reading-comprehension', difficulty:currentDifficulty||'mixed',
                 score, totalQuestions:currentQuestions.length, isTest:isTestMode,
                 setNumber:currentSetNumber, completedAt:new Date().toISOString(),
                 sessionId:currentSessionId, timeTaken:elapsedTime
@@ -994,6 +1027,7 @@ async function showScore() {
         } catch(e){}
     }
     const badge=(pct>=70&&!isTestMode&&currentSetNumber)?'<p style="color:#00b894;font-weight:bold;margin-top:10px;">✓ Practice set marked as complete!</p>':'';
+    const buttonText = selectedSubject==='reading-comprehension' ? 'Try Another Passage!' : 'Try Another Set!';
     document.getElementById('questionContainer').innerHTML=`
         <div class="score-display">
             <div class="score-emoji">${emoji}</div>
@@ -1001,7 +1035,7 @@ async function showScore() {
             <div class="score-message">${msg}</div>
             <div class="time-taken">⏱️ Time: ${formatTime(elapsedTime)}</div>
             ${badge}
-            <button class="back-button" onclick="goToPractice()" style="margin:20px auto 0;">Try Another Set!</button>
+            <button class="back-button" onclick="goToPractice()" style="margin:20px auto 0;">${buttonText}</button>
         </div>`;
 }
 
